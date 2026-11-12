@@ -1,0 +1,655 @@
+{
+  "Bebas Neue": {
+    "role": "h",
+    "kind": "sans",
+    "weights": {
+      "400": "bebas-neue-400.woff2"
+    }
+  },
+  "Oswald": {
+    "role": "h",
+    "kind": "sans",
+    "weights": {
+      "400": "oswald-400.woff2",
+      "600": "oswald-400.woff2",
+      "700": "oswald-400.woff2"
+    }
+  },
+  "Montserrat": {
+    "role": "hb",
+    "kind": "sans",
+    "weights": {
+      "400": "montserrat-400.woff2",
+      "600": "montserrat-400.woff2",
+      "700": "montserrat-400.woff2",
+      "800": "montserrat-400.woff2"
+    }
+  },
+  "Poppins": {
+    "role": "hb",
+    "kind": "sans",
+    "weights": {
+      "400": "poppins-400.woff2",
+      "600": "poppins-600.woff2",
+      "700": "poppins-700.woff2"
+    }
+  },
+  "Playfair Display": {
+    "role": "h",
+    "kind": "serif",
+    "weights": {
+      "400": "playfair-display-400.woff2",
+      "600": "playfair-display-400.woff2",
+      "700": "playfair-display-400.woff2"
+    }
+  },
+  "Lora": {
+    "role": "hb",
+    "kind": "serif",
+    "weights": {
+      "400": "lora-400.woff2",
+      "600": "lora-400.woff2",
+      "700": "lora-400.woff2"
+    }
+  },
+  "Raleway": {
+    "role": "hb",
+    "kind": "sans",
+    "weights": {
+      "400": "raleway-400.woff2",
+      "600": "raleway-400.woff2",
+      "700": "raleway-400.woff2"
+    }
+  },
+  "DM Serif Display": {
+    "role": "h",
+    "kind": "serif",
+    "weights": {
+      "400": "dm-serif-display-400.woff2"
+    }
+  },
+  "Inter": {
+    "role": "hb",
+    "kind": "sans",
+    "weights": {
+      "400": "inter-400.woff2",
+      "600": "inter-400.woff2",
+      "700": "inter-400.woff2"
+    }
+  },
+  "Merriweather": {
+    "role": "hb",
+    "kind": "serif",
+    "weights": {
+      "400": "merriweather-400.woff2",
+      "700": "merriweather-400.woff2"
+    }
+  },
+  "Open Sans": {
+    "role": "b",
+    "kind": "sans",
+    "weights": {
+      "400": "open-sans-400.woff2",
+      "600": "open-sans-400.woff2",
+      "700": "open-sans-400.woff2"
+    }
+  },
+  "Lato": {
+    "role": "b",
+    "kind": "sans",
+    "weights": {
+      "400": "lato-400.woff2",
+      "700": "lato-700.woff2"
+    }
+  },
+  "Source Sans 3": {
+    "role": "b",
+    "kind": "sans",
+    "weights": {
+      "400": "source-sans-3-400.woff2",
+      "600": "source-sans-3-400.woff2",
+      "700": "source-sans-3-400.woff2"
+    }
+  },
+  "Nunito": {
+    "role": "b",
+    "kind": "sans",
+    "weights": {
+      "400": "nunito-400.woff2",
+      "600": "nunito-400.woff2",
+      "700": "nunito-400.woff2"
+    }
+  },
+  "Roboto": {
+    "role": "b",
+    "kind": "sans",
+    "weights": {
+      "400": "roboto-400.woff2",
+      "500": "roboto-400.woff2",
+      "700": "roboto-400.woff2"
+    }
+  },
+  "Work Sans": {
+    "role": "hb",
+    "kind": "sans",
+    "weights": {
+      "400": "work-sans-400.woff2",
+      "600": "work-sans-400.woff2",
+      "700": "work-sans-400.woff2"
+    }
+  },
+  "Manrope": {
+    "role": "hb",
+    "kind": "sans",
+    "weights": {
+      "400": "manrope-400.woff2",
+      "600": "manrope-400.woff2",
+      "700": "manrope-400.woff2",
+      "800": "manrope-400.woff2"
+    }
+  },
+  "Plus Jakarta Sans": {
+    "role": "hb",
+    "kind": "sans",
+    "weights": {
+      "400": "plus-jakarta-sans-400.woff2",
+      "600": "plus-jakarta-sans-400.woff2",
+      "700": "plus-jakarta-sans-400.woff2",
+      "800": "plus-jakarta-sans-400.woff2"
+    }
+  },
+  "DM Sans": {
+    "role": "hb",
+    "kind": "sans",
+    "weights": {
+      "400": "dm-sans-400.woff2",
+      "500": "dm-sans-400.woff2",
+      "700": "dm-sans-400.woff2"
+    }
+  },
+  "Outfit": {
+    "role": "hb",
+    "kind": "sans",
+    "weights": {
+      "400": "outfit-400.woff2",
+      "600": "outfit-400.woff2",
+      "700": "outfit-400.woff2"
+    }
+  },
+  "Sora": {
+    "role": "hb",
+    "kind": "sans",
+    "weights": {
+      "400": "sora-400.woff2",
+      "600": "sora-400.woff2",
+      "700": "sora-400.woff2"
+    }
+  },
+  "Space Grotesk": {
+    "role": "hb",
+    "kind": "sans",
+    "weights": {
+      "400": "space-grotesk-400.woff2",
+      "500": "space-grotesk-400.woff2",
+      "700": "space-grotesk-400.woff2"
+    }
+  },
+  "Urbanist": {
+    "role": "hb",
+    "kind": "sans",
+    "weights": {
+      "400": "urbanist-400.woff2",
+      "600": "urbanist-400.woff2",
+      "700": "urbanist-400.woff2",
+      "800": "urbanist-400.woff2"
+    }
+  },
+  "Figtree": {
+    "role": "hb",
+    "kind": "sans",
+    "weights": {
+      "400": "figtree-400.woff2",
+      "600": "figtree-400.woff2",
+      "700": "figtree-400.woff2"
+    }
+  },
+  "Lexend": {
+    "role": "hb",
+    "kind": "sans",
+    "weights": {
+      "400": "lexend-400.woff2",
+      "600": "lexend-400.woff2",
+      "700": "lexend-400.woff2"
+    }
+  },
+  "Albert Sans": {
+    "role": "hb",
+    "kind": "sans",
+    "weights": {
+      "400": "albert-sans-400.woff2",
+      "600": "albert-sans-400.woff2",
+      "700": "albert-sans-400.woff2"
+    }
+  },
+  "Rubik": {
+    "role": "hb",
+    "kind": "sans",
+    "weights": {
+      "400": "rubik-400.woff2",
+      "500": "rubik-400.woff2",
+      "700": "rubik-400.woff2"
+    }
+  },
+  "Mulish": {
+    "role": "hb",
+    "kind": "sans",
+    "weights": {
+      "400": "mulish-400.woff2",
+      "600": "mulish-400.woff2",
+      "700": "mulish-400.woff2"
+    }
+  },
+  "Barlow": {
+    "role": "hb",
+    "kind": "sans",
+    "weights": {
+      "400": "barlow-400.woff2",
+      "600": "barlow-600.woff2",
+      "700": "barlow-700.woff2"
+    }
+  },
+  "Archivo": {
+    "role": "hb",
+    "kind": "sans",
+    "weights": {
+      "400": "archivo-400.woff2",
+      "600": "archivo-400.woff2",
+      "700": "archivo-400.woff2"
+    }
+  },
+  "Bricolage Grotesque": {
+    "role": "hb",
+    "kind": "sans",
+    "weights": {
+      "400": "bricolage-grotesque-400.woff2",
+      "600": "bricolage-grotesque-400.woff2",
+      "700": "bricolage-grotesque-400.woff2"
+    }
+  },
+  "Epilogue": {
+    "role": "hb",
+    "kind": "sans",
+    "weights": {
+      "400": "epilogue-400.woff2",
+      "600": "epilogue-400.woff2",
+      "700": "epilogue-400.woff2"
+    }
+  },
+  "Onest": {
+    "role": "hb",
+    "kind": "sans",
+    "weights": {
+      "400": "onest-400.woff2",
+      "600": "onest-400.woff2",
+      "700": "onest-400.woff2"
+    }
+  },
+  "Instrument Sans": {
+    "role": "hb",
+    "kind": "sans",
+    "weights": {
+      "400": "instrument-sans-400.woff2",
+      "600": "instrument-sans-400.woff2",
+      "700": "instrument-sans-400.woff2"
+    }
+  },
+  "Be Vietnam Pro": {
+    "role": "hb",
+    "kind": "sans",
+    "weights": {
+      "400": "be-vietnam-pro-400.woff2",
+      "600": "be-vietnam-pro-600.woff2",
+      "700": "be-vietnam-pro-700.woff2"
+    }
+  },
+  "IBM Plex Sans": {
+    "role": "hb",
+    "kind": "sans",
+    "weights": {
+      "400": "ibm-plex-sans-400.woff2",
+      "600": "ibm-plex-sans-400.woff2",
+      "700": "ibm-plex-sans-400.woff2"
+    }
+  },
+  "Public Sans": {
+    "role": "hb",
+    "kind": "sans",
+    "weights": {
+      "400": "public-sans-400.woff2",
+      "600": "public-sans-400.woff2",
+      "700": "public-sans-400.woff2"
+    }
+  },
+  "Libre Franklin": {
+    "role": "hb",
+    "kind": "sans",
+    "weights": {
+      "400": "libre-franklin-400.woff2",
+      "600": "libre-franklin-400.woff2",
+      "700": "libre-franklin-400.woff2"
+    }
+  },
+  "Red Hat Display": {
+    "role": "hb",
+    "kind": "sans",
+    "weights": {
+      "400": "red-hat-display-400.woff2",
+      "600": "red-hat-display-400.woff2",
+      "700": "red-hat-display-400.woff2"
+    }
+  },
+  "Jost": {
+    "role": "hb",
+    "kind": "sans",
+    "weights": {
+      "400": "jost-400.woff2",
+      "600": "jost-400.woff2",
+      "700": "jost-400.woff2"
+    }
+  },
+  "Josefin Sans": {
+    "role": "hb",
+    "kind": "sans",
+    "weights": {
+      "400": "josefin-sans-400.woff2",
+      "600": "josefin-sans-400.woff2",
+      "700": "josefin-sans-400.woff2"
+    }
+  },
+  "Quicksand": {
+    "role": "hb",
+    "kind": "sans",
+    "weights": {
+      "400": "quicksand-400.woff2",
+      "600": "quicksand-400.woff2",
+      "700": "quicksand-400.woff2"
+    }
+  },
+  "Fira Sans": {
+    "role": "hb",
+    "kind": "sans",
+    "weights": {
+      "400": "fira-sans-400.woff2",
+      "600": "fira-sans-600.woff2",
+      "700": "fira-sans-700.woff2"
+    }
+  },
+  "Cabin": {
+    "role": "hb",
+    "kind": "sans",
+    "weights": {
+      "400": "cabin-400.woff2",
+      "600": "cabin-400.woff2",
+      "700": "cabin-400.woff2"
+    }
+  },
+  "Karla": {
+    "role": "hb",
+    "kind": "sans",
+    "weights": {
+      "400": "karla-400.woff2",
+      "600": "karla-400.woff2",
+      "700": "karla-400.woff2"
+    }
+  },
+  "Heebo": {
+    "role": "hb",
+    "kind": "sans",
+    "weights": {
+      "400": "heebo-400.woff2",
+      "600": "heebo-400.woff2",
+      "700": "heebo-400.woff2"
+    }
+  },
+  "Noto Sans": {
+    "role": "b",
+    "kind": "sans",
+    "weights": {
+      "400": "noto-sans-400.woff2",
+      "600": "noto-sans-400.woff2",
+      "700": "noto-sans-400.woff2"
+    }
+  },
+  "Overpass": {
+    "role": "hb",
+    "kind": "sans",
+    "weights": {
+      "400": "overpass-400.woff2",
+      "600": "overpass-400.woff2",
+      "700": "overpass-400.woff2"
+    }
+  },
+  "Hind": {
+    "role": "b",
+    "kind": "sans",
+    "weights": {
+      "400": "hind-400.woff2",
+      "600": "hind-600.woff2",
+      "700": "hind-700.woff2"
+    }
+  },
+  "PT Sans": {
+    "role": "b",
+    "kind": "sans",
+    "weights": {
+      "400": "pt-sans-400.woff2",
+      "700": "pt-sans-700.woff2"
+    }
+  },
+  "Titillium Web": {
+    "role": "hb",
+    "kind": "sans",
+    "weights": {
+      "400": "titillium-web-400.woff2",
+      "600": "titillium-web-600.woff2",
+      "700": "titillium-web-700.woff2"
+    }
+  },
+  "Exo 2": {
+    "role": "hb",
+    "kind": "sans",
+    "weights": {
+      "400": "exo-2-400.woff2",
+      "600": "exo-2-400.woff2",
+      "700": "exo-2-400.woff2"
+    }
+  },
+  "Space Mono": {
+    "role": "h",
+    "kind": "sans",
+    "weights": {
+      "400": "space-mono-400.woff2",
+      "700": "space-mono-700.woff2"
+    }
+  },
+  "Anton": {
+    "role": "h",
+    "kind": "sans",
+    "weights": {
+      "400": "anton-400.woff2"
+    }
+  },
+  "Archivo Black": {
+    "role": "h",
+    "kind": "sans",
+    "weights": {
+      "400": "archivo-black-400.woff2"
+    }
+  },
+  "Barlow Condensed": {
+    "role": "h",
+    "kind": "sans",
+    "weights": {
+      "400": "barlow-condensed-400.woff2",
+      "600": "barlow-condensed-600.woff2",
+      "700": "barlow-condensed-700.woff2"
+    }
+  },
+  "Syne": {
+    "role": "h",
+    "kind": "sans",
+    "weights": {
+      "400": "syne-400.woff2",
+      "600": "syne-400.woff2",
+      "700": "syne-400.woff2",
+      "800": "syne-400.woff2"
+    }
+  },
+  "League Spartan": {
+    "role": "h",
+    "kind": "sans",
+    "weights": {
+      "400": "league-spartan-400.woff2",
+      "600": "league-spartan-400.woff2",
+      "700": "league-spartan-400.woff2"
+    }
+  },
+  "Teko": {
+    "role": "h",
+    "kind": "sans",
+    "weights": {
+      "400": "teko-400.woff2",
+      "600": "teko-400.woff2",
+      "700": "teko-400.woff2"
+    }
+  },
+  "Source Serif 4": {
+    "role": "hb",
+    "kind": "serif",
+    "weights": {
+      "400": "source-serif-4-400.woff2",
+      "600": "source-serif-4-400.woff2",
+      "700": "source-serif-4-400.woff2"
+    }
+  },
+  "Libre Baskerville": {
+    "role": "hb",
+    "kind": "serif",
+    "weights": {
+      "400": "libre-baskerville-400.woff2",
+      "700": "libre-baskerville-400.woff2"
+    }
+  },
+  "Cormorant Garamond": {
+    "role": "h",
+    "kind": "serif",
+    "weights": {
+      "400": "cormorant-garamond-400.woff2",
+      "600": "cormorant-garamond-400.woff2",
+      "700": "cormorant-garamond-400.woff2"
+    }
+  },
+  "EB Garamond": {
+    "role": "hb",
+    "kind": "serif",
+    "weights": {
+      "400": "eb-garamond-400.woff2",
+      "600": "eb-garamond-400.woff2",
+      "700": "eb-garamond-400.woff2"
+    }
+  },
+  "Crimson Pro": {
+    "role": "hb",
+    "kind": "serif",
+    "weights": {
+      "400": "crimson-pro-400.woff2",
+      "600": "crimson-pro-400.woff2",
+      "700": "crimson-pro-400.woff2"
+    }
+  },
+  "Fraunces": {
+    "role": "h",
+    "kind": "serif",
+    "weights": {
+      "400": "fraunces-400.woff2",
+      "600": "fraunces-400.woff2",
+      "700": "fraunces-400.woff2"
+    }
+  },
+  "Bitter": {
+    "role": "hb",
+    "kind": "serif",
+    "weights": {
+      "400": "bitter-400.woff2",
+      "600": "bitter-400.woff2",
+      "700": "bitter-400.woff2"
+    }
+  },
+  "Roboto Slab": {
+    "role": "hb",
+    "kind": "serif",
+    "weights": {
+      "400": "roboto-slab-400.woff2",
+      "600": "roboto-slab-400.woff2",
+      "700": "roboto-slab-400.woff2"
+    }
+  },
+  "Spectral": {
+    "role": "hb",
+    "kind": "serif",
+    "weights": {
+      "400": "spectral-400.woff2",
+      "600": "spectral-600.woff2",
+      "700": "spectral-700.woff2"
+    }
+  },
+  "PT Serif": {
+    "role": "hb",
+    "kind": "serif",
+    "weights": {
+      "400": "pt-serif-400.woff2",
+      "700": "pt-serif-700.woff2"
+    }
+  },
+  "Newsreader": {
+    "role": "hb",
+    "kind": "serif",
+    "weights": {
+      "400": "newsreader-400.woff2",
+      "600": "newsreader-400.woff2",
+      "700": "newsreader-400.woff2"
+    }
+  },
+  "Noto Serif": {
+    "role": "b",
+    "kind": "serif",
+    "weights": {
+      "400": "noto-serif-400.woff2",
+      "600": "noto-serif-400.woff2",
+      "700": "noto-serif-400.woff2"
+    }
+  },
+  "Cormorant": {
+    "role": "h",
+    "kind": "serif",
+    "weights": {
+      "400": "cormorant-400.woff2",
+      "600": "cormorant-400.woff2",
+      "700": "cormorant-400.woff2"
+    }
+  },
+  "Abril Fatface": {
+    "role": "h",
+    "kind": "serif",
+    "weights": {
+      "400": "abril-fatface-400.woff2"
+    }
+  },
+  "Prata": {
+    "role": "h",
+    "kind": "serif",
+    "weights": {
+      "400": "prata-400.woff2"
+    }
+  }
+}

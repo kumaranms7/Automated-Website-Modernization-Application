@@ -1,0 +1,6 @@
+/* Tailwind's own layers, for the entries that build a kit site (see src/kit/css.js). It lives here so that "tailwindcss/…" resolves from the
+   platform's folder wherever the website's data is kept. */
+@layer theme, base, components, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/preflight.css" layer(base);
+@import "tailwindcss/utilities.css" layer(utilities);

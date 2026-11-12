@@ -1,0 +1,102 @@
+{
+  "_help": "A reference copy, rewritten at each start. Do not edit it: copy the settings you want to change into app-settings.json.",
+  "model": {
+    "default": "claude-sonnet-5-5",
+    "list": [
+      {
+        "id": "claude-sonnet-5-5",
+        "label": "Claude Sonnet 5.5 — balanced (recommended)"
+      },
+      {
+        "id": "claude-opus-5-5",
+        "label": "Claude Opus 5.5 — highest quality, slower"
+      },
+      {
+        "id": "claude-haiku-5-5",
+        "label": "Claude Haiku 5.5 — fastest, lowest cost"
+      },
+      {
+        "id": "claude-fable-5-1",
+        "label": "Claude Fable 5.1"
+      }
+    ]
+  },
+  "prices": {
+    "claude-sonnet-5-5": [
+      2,
+      10
+    ],
+    "claude-sonnet-5": [
+      2,
+      10
+    ],
+    "claude-opus-5-5": [
+      4,
+      20
+    ],
+    "claude-opus-5": [
+      5,
+      25
+    ],
+    "claude-haiku-5-5": [
+      0.1,
+      0.5
+    ],
+    "claude-fable-5-1": [
+      10,
+      50
+    ],
+    "claude-fable-5": [
+      10,
+      50
+    ]
+  },
+  "cache": {
+    "readOfInput": 0.1,
+    "writeOfInput": 1.25
+  },
+  "businessTypes": [
+    "LocalBusiness",
+    "Plumber",
+    "Electrician",
+    "HVACBusiness",
+    "RoofingContractor",
+    "GeneralContractor",
+    "HomeAndConstructionBusiness",
+    "LegalService",
+    "Attorney",
+    "Dentist",
+    "Physician",
+    "MedicalBusiness",
+    "AutoRepair",
+    "AutomotiveBusiness",
+    "RealEstateAgent",
+    "FinancialService",
+    "AccountingService",
+    "InsuranceAgency",
+    "Store",
+    "Restaurant",
+    "ProfessionalService",
+    "SecurityService",
+    "MovingCompany",
+    "Locksmith",
+    "PestControl",
+    "CleaningService"
+  ],
+  "recognisedBusinessTypes": [
+    "Organization",
+    "HousePainter"
+  ],
+  "limits": {
+    "samplePages": 10,
+    "browserTestPages": 12,
+    "profilePages": 8,
+    "aiRetries": 4,
+    "concurrency": {
+      "aiWriting": 3,
+      "browserTests": 3,
+      "images": 4,
+      "phpScan": 6
+    }
+  }
+}

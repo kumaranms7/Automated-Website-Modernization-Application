@@ -1,0 +1,73 @@
+{
+  "name": "site-modernizer",
+  "version": "1.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "portal": "node scripts/build-ui.mjs && node --env-file-if-exists=.env src/server/index.js",
+    "build:ui": "node scripts/build-ui.mjs --force",
+    "scan": "node --env-file-if-exists=.env src/cli.js scan",
+    "test": "node --test \"tests/*.test.mjs\"",
+    "desktop": "node scripts/build-ui.mjs && electron .",
+    "dist:dir": "node scripts/build-ui.mjs --force && electron-builder --win --dir",
+    "dist": "node scripts/build-ui.mjs --force && electron-builder --win --dir",
+    "dist:portable": "npm run dist && node scripts/make-portable.mjs"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.2.0",
+    "@tailwindcss/cli": "^4.3.3",
+    "adm-zip": "^0.6.1",
+    "archiver": "^8.0.0",
+    "axe-core": "^4.14.0",
+    "cheerio": "^1.2.0",
+    "express": "^5.3.0",
+    "playwright-core": "^1.64.1",
+    "sharp": "^0.35.5",
+    "tailwindcss": "^4.3.3",
+    "yauzl": "^3.4.0"
+  },
+  "devDependencies": {
+    "electron": "^45.1.0",
+    "electron-builder": "^26.18.0"
+  },
+  "productName": "Site Modernizer",
+  "description": "Website modernization platform for Top Ten Website Marketing",
+  "author": "Top Ten Website Marketing",
+  "main": "electron/main.cjs",
+  "build": {
+    "appId": "com.toptenwebsitemarketing.sitemodernizer",
+    "productName": "Site Modernizer",
+    "copyright": "Top Ten Website Marketing",
+    "asar": false,
+    "directories": {
+      "output": "dist-desktop",
+      "buildResources": "electron"
+    },
+    "files": [
+      "electron/**/*",
+      "src/**/*",
+      "scripts/build-ui.mjs",
+      "package.json",
+      "!**/*.md",
+      "!**/*.map",
+      "!**/test/**",
+      "!**/tests/**"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "dir",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "electron/icon.png"
+    },
+    "npmRebuild": false,
+    "electronLanguages": [
+      "en-US"
+    ],
+    "electronDist": "node_modules/electron/dist"
+  }
+}

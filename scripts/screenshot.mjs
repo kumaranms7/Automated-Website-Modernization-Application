@@ -1,0 +1,12 @@
+import { chromium } from 'playwright-core';
+const [,, url, out, w = '1280', full = '1'] = process.argv;
+const b = await chromium.launch({ channel: 'msedge' });
+const p = await b.newPage({ viewport: { width: Number(w), height: 900 } });
+const errs = [];
+p.on('console', (m) => m.type() === 'error' && errs.push(m.text()));
+p.on('response', (r) => r.status() >= 400 && errs.push(r.status() + ' ' + r.url()));
+p.on('pageerror', (e) => errs.push('PAGEERROR ' + e.message));
+await p.goto(url, { waitUntil: 'networkidle', timeout: 45000 }).catch((e) => errs.push('NAV ' + e.message));
+await p.screenshot({ path: out, fullPage: full === '1' });
+console.log(JSON.stringify(errs.slice(0, 8)));
+await b.close();

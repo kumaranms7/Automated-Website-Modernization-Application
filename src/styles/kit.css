@@ -1,0 +1,128 @@
+/* The design kit's Tailwind layer. The layout of every kit section is written with Tailwind utility classes in the markup; this file holds only
+   what utilities cannot say: the design tokens, the keyframes of the few animations, the "on dark" variant, and the base look of plain content
+   elements (headings, lists, tables, quotes, forms, accordions...), written with Tailwind's own @apply so every design styles raw content. */
+
+@custom-variant on-dark (&:where(.on-dark, .on-dark *));
+
+@theme inline {
+  /* colours that take an opacity (bg-brand/10): the website's theme */
+  --color-brand: var(--th-brand-primary);
+  --color-brand-hover: var(--th-brand-primary-hover);
+  --color-accent: var(--th-brand-accent);
+  --color-ink: var(--th-text-primary);
+  --color-night: var(--th-bg-dark);
+  --color-paper: var(--th-bg);
+  --color-surf: var(--th-surface-card);
+  --color-paper-alt: var(--th-bg-alt);
+  --radius-k: var(--k-r);
+  --radius-ks: var(--k-r-sm);
+  --radius-kb: var(--k-r-btn);
+  --shadow-k1: var(--k-shadow-1);
+  --shadow-k2: var(--k-shadow-2);
+  --shadow-k3: var(--k-shadow-3);
+  --shadow-kglow: var(--k-glow);
+  --font-display: var(--brand-font-heading);
+  --font-sans: var(--brand-font-body);
+  --animate-k-scroll: k-scroll 40s linear infinite;
+  --animate-k-bob: k-bob 7s ease-in-out infinite;
+  --animate-k-drift: k-drift 18s ease-in-out infinite alternate;
+  --animate-k-pulse: k-pulse 3.5s ease-in-out infinite;
+  --animate-k-rise: k-rise linear both;
+}
+@keyframes k-scroll { to { transform: translateX(calc(-50% - .5rem)); } }
+@keyframes k-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+@keyframes k-drift { from { transform: translate3d(-2%, 0, 0) scale(1); } to { transform: translate3d(2%, 3%, 0) scale(1.08); } }
+@keyframes k-pulse { 50% { transform: translate(-50%, -50%) scale(1.25); opacity: .6; } }
+@keyframes k-rise { from { opacity: .55; transform: translateY(1.5rem); } to { opacity: 1; transform: none; } }
+
+/* the shape language of a design: each design (and each website's configuration) sets these on <body> */
+@layer base {
+  :root {
+    --k-r: 1.25rem; --k-r-sm: .85rem; --k-r-btn: 999px; --k-wrap: 76rem; --k-sec-y: clamp(3.5rem, 7.5vw, 7rem); --k-gap: clamp(1rem, 2vw, 1.5rem);
+    --k-h-weight: 700; --k-h-track: -.03em; --k-h-case: none;
+    --k-shadow-1: 0 1px 2px rgb(15 23 42 / .05), 0 2px 6px rgb(15 23 42 / .04);
+    --k-shadow-2: 0 1px 2px rgb(15 23 42 / .04), 0 8px 24px -6px rgb(15 23 42 / .10), 0 24px 48px -24px rgb(15 23 42 / .12);
+    --k-shadow-3: 0 2px 4px rgb(15 23 42 / .04), 0 16px 40px -8px rgb(15 23 42 / .16), 0 40px 80px -32px rgb(15 23 42 / .22);
+    --k-glow: 0 10px 30px -8px color-mix(in srgb, var(--th-brand-primary) 55%, transparent);
+  }
+  .k-body { @apply bg-background font-sans text-base leading-relaxed text-primary antialiased; overflow-x: clip; text-rendering: optimizeLegibility; }
+  .k-body :focus-visible { @apply outline-3 outline-offset-4 outline-focus rounded-md; }
+}
+
+@utility k-mask-fade-x { mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent); }
+@utility k-mask-grid { mask-image: radial-gradient(70% 70% at 50% 50%, #000, transparent); }
+@utility k-text-balance { text-wrap: balance; }
+
+/* ---- the base look of plain content elements: put .prose-k on any container of raw content ---- */
+@layer components {
+  .prose-k { @apply text-base leading-relaxed text-secondary; }
+  .prose-k > * + * { @apply mt-5; }
+  .prose-k > :first-child { @apply mt-0; }
+  .prose-k :is(h1, h2, h3, h4, h5, h6) { @apply font-display text-heading on-dark:text-on-dark; font-weight: var(--k-h-weight); letter-spacing: var(--k-h-track); text-transform: var(--k-h-case); line-height: 1.12; text-wrap: balance; }
+  .prose-k h1 { @apply text-4xl sm:text-5xl; }
+  .prose-k h2 { @apply mt-12 text-3xl sm:text-4xl; }
+  .prose-k h3 { @apply mt-9 text-2xl; }
+  .prose-k h4 { @apply mt-7 text-xl; }
+  .prose-k :is(h5, h6) { @apply mt-6 text-base uppercase tracking-wider; }
+  .prose-k p { text-wrap: pretty; }
+  .prose-k :is(strong, b) { @apply font-bold text-heading on-dark:text-on-dark; }
+  .prose-k em { @apply italic; }
+  .prose-k mark { @apply rounded-sm bg-accent/25 px-1 text-heading; }
+  .prose-k small { @apply text-sm text-muted; }
+  .prose-k a { @apply font-semibold text-brand underline decoration-brand/40 decoration-2 underline-offset-4 transition hover:decoration-brand; }
+  .prose-k :is(ul, ol) { @apply grid gap-2.5 pl-6; }
+  .prose-k ul { @apply list-disc; }
+  .prose-k ol { @apply list-decimal; }
+  .prose-k li { @apply pl-1; }
+  .prose-k li::marker { @apply font-bold text-brand; }
+  .prose-k :is(ul, ol) :is(ul, ol) { @apply mt-2.5; }
+  .prose-k li > img { @apply mr-1.5 inline size-4 align-[-.2em]; }
+  .prose-k blockquote { @apply rounded-r-ks border-l-4 border-brand bg-brand/5 py-4 pr-5 pl-6 text-lg font-medium text-heading italic; }
+  .prose-k blockquote p + p { @apply mt-3; }
+  .prose-k hr { @apply my-10 border-0 border-t border-default; }
+  .prose-k code { @apply rounded-md bg-background-alt px-1.5 py-0.5 font-mono text-[.9em] text-heading; }
+  .prose-k pre { @apply overflow-x-auto rounded-ks bg-dark p-5 text-sm text-on-dark; }
+  .prose-k pre code { @apply bg-transparent p-0 text-inherit; }
+  .prose-k kbd { @apply rounded-md border border-b-2 border-strong bg-surface px-1.5 py-0.5 font-mono text-xs; }
+  /* pictures of a page keep their proportions and never grow past a sensible size (an old page's small icon is not stretched to the column) */
+  .prose-k img, .prose-k video { @apply h-auto max-h-[32rem] max-w-full rounded-k object-contain; }
+  .prose-k img[width] { @apply w-auto; }
+  .prose-k figure { @apply grid gap-2; }
+  .prose-k figcaption { @apply text-sm text-muted; }
+  .prose-k table { @apply w-full border-separate border-spacing-0 overflow-hidden rounded-ks border border-default text-[.96rem]; }
+  .prose-k :is(th, td) { @apply border-b border-light px-4 py-3 text-left align-top; }
+  .prose-k th { @apply bg-background-alt font-bold text-heading; }
+  .prose-k td { @apply text-secondary; }
+  .prose-k td:first-child { @apply font-semibold text-heading; }
+  .prose-k tbody tr:nth-child(even) td { @apply bg-paper-alt/50; }
+  .prose-k tr:last-child :is(td, th) { @apply border-b-0; }
+  .prose-k dl { @apply grid gap-4; }
+  .prose-k dt { @apply font-bold text-heading; }
+  .prose-k dd { @apply text-secondary; }
+  .prose-k details { @apply rounded-ks border border-default bg-surface px-5 py-4; }
+  .prose-k summary { @apply cursor-pointer font-bold text-heading; }
+  .prose-k details[open] summary { @apply mb-3; }
+  /* form controls */
+  .prose-k :is(input:not([type=checkbox], [type=radio], [type=range]), select, textarea), .form-k :is(input:not([type=checkbox], [type=radio], [type=range]), select, textarea) { @apply w-full rounded-ks border-[1.5px] border-input bg-input px-4 py-3 text-primary transition focus:border-brand focus:ring-4 focus:ring-brand/15 focus:outline-none; }
+  .prose-k label, .form-k label { @apply text-sm font-bold text-heading; }
+}
+
+/* animation of sections and parts (see src/kit/motion.js): entrances, and loops */
+@keyframes ka-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes ka-fade-up { from { opacity: 0; transform: translateY(28px); } to { opacity: 1; transform: none; } }
+@keyframes ka-fade-down { from { opacity: 0; transform: translateY(-28px); } to { opacity: 1; transform: none; } }
+@keyframes ka-fade-left { from { opacity: 0; transform: translateX(36px); } to { opacity: 1; transform: none; } }
+@keyframes ka-fade-right { from { opacity: 0; transform: translateX(-36px); } to { opacity: 1; transform: none; } }
+@keyframes ka-zoom-in { from { opacity: 0; transform: scale(.85); } to { opacity: 1; transform: none; } }
+@keyframes ka-zoom-out { from { opacity: 0; transform: scale(1.15); } to { opacity: 1; transform: none; } }
+@keyframes ka-slide-up { from { opacity: 0; transform: translateY(90px); } to { opacity: 1; transform: none; } }
+@keyframes ka-flip { from { opacity: 0; transform: perspective(800px) rotateX(70deg); } to { opacity: 1; transform: none; } }
+@keyframes ka-blur { from { opacity: 0; filter: blur(14px); } to { opacity: 1; filter: none; } }
+@keyframes ka-rotate { from { opacity: 0; transform: rotate(-8deg) scale(.92); } to { opacity: 1; transform: none; } }
+@keyframes ka-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+@keyframes ka-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.07); } }
+@keyframes ka-wiggle { 0%, 100% { transform: rotate(0); } 20% { transform: rotate(-4deg); } 40% { transform: rotate(4deg); } 60% { transform: rotate(-3deg); } 80% { transform: rotate(3deg); } }
+@keyframes ka-bounce { 0%, 100% { transform: translateY(0); animation-timing-function: cubic-bezier(.8, 0, 1, 1); } 50% { transform: translateY(-14px); animation-timing-function: cubic-bezier(0, 0, .2, 1); } }
+@keyframes ka-swing { 0%, 100% { transform: rotate(-5deg); } 50% { transform: rotate(5deg); } }
+@keyframes ka-spin { to { transform: rotate(360deg); } }
+@keyframes ka-glow { 0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--th-brand-primary) 0%, transparent); } 50% { box-shadow: 0 0 28px 6px color-mix(in srgb, var(--th-brand-primary) 45%, transparent); } }

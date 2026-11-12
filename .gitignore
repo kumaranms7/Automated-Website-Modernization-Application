@@ -1,0 +1,12 @@
+node_modules
+.env
+clients/*/backup
+settings.local.json
+shots
+clients/*/build
+
+dist-desktop/
+
+# customer websites and their builds are not part of the application
+clients/
+2026_modernisation_report.html
