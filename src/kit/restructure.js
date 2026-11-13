@@ -42,18 +42,26 @@ const asBlocks = (ps) => ps.map((p) => (p.k === 'img' ? p.b : p.k === 'h' ? { t:
 const plainIntro = (ps) => ps.filter((p) => p.k === 'p' && !p.link).map((p) => ({ t: 'html', html: p.html }));
 
 // ---------- recognisers ----------
-function faqOf(title, ps) {
-  const isQ = (p) => (p.k === 'h') || (p.k === 'p' && p.text.length < 170 && (/^q\s*[:.)]/i.test(p.text) || (/\?$/.test(p.text) && (p.link || p.strong))));
+function faqOf(title, ps, strict = false) {
+  const titled = strict && FAQ_TITLE.test(title);
+  const isQ = (p) => (p.k === 'h') || (p.k === 'p' && p.text.length < 170 && (/^q\s*[:.)]/i.test(p.text) || (/\?$/.test(p.text) && (p.link || p.strong || titled))));
   const qs = ps.filter(isQ).length;
   if (qs < 2 || !(FAQ_TITLE.test(title) || qs >= 3)) return null;
+  // (strict: only real questions are questions; a text with several headings stays a text)
+  if (strict && !FAQ_TITLE.test(title) && ps.filter((p) => isQ(p) && /\?\s*$/.test(p.text || '')).length < Math.max(2, qs * 0.6)) return null;
   const intro = [], items = [];
+  // the pictures of the text are kept: one before the first question leads the section, one after the last answer stood beside the text
+  const before = [], after = [];
   for (const p of ps) {
     if (isQ(p)) { items.push({ q: p.text || '', parts: [] }); continue; }
-    if (!items.length) { if (p.k === 'p') intro.push({ t: 'html', html: p.html }); else return null; continue; }
+    if (!items.length) { if (p.k === 'p') intro.push({ t: 'html', html: p.html }); else if (p.k === 'img') before.push(p.b); else return null; continue; }
     items[items.length - 1].parts.push(p);
   }
+  const last = items[items.length - 1];
+  while (last && last.parts.length > 1 && last.parts[last.parts.length - 1].k === 'img') after.unshift(last.parts.pop().b);
   if (items.some((i) => !i.parts.length)) return null;
-  return { type: 'faq', title: title || '', intro, items: items.map((i) => ({ q: i.q, a: i.parts.map((p) => (p.html || '')).join('') })) };
+  const fig = (b) => `<figure><img src="${esc(b.src)}" alt="${esc(b.alt || '')}" loading="lazy" decoding="async"></figure>`;
+  return { type: 'faq', title: title || '', intro, items: items.map((i) => ({ q: i.q, a: i.parts.map((p) => (p.html || (p.k === 'img' ? fig(p.b) : ''))).join('') })), before, after };
 }
 // "Label: text" / "Label — text" / "<strong>Label</strong> text"
 function featOf(item) {
@@ -108,8 +116,15 @@ function convert(s, design) {
   const ps = withLinkRows(pieces(s.blocks));
   if (!ps.length) return [s];
 
-  const faq = faqOf(title, ps.filter((p) => !(p.k === 'p' && p.html.includes('not-prose'))));
-  if (faq && !ps.some((p) => p.k === 'p' && p.html.includes('not-prose'))) return s.img ? [faq, { type: 'prose', title: '', blocks: [{ t: 'img', src: s.img, alt: s.imgAlt || '' }] }] : [faq]; // (the picture of the section is not lost)
+  const bands = Boolean(design?.bands);
+  const faq = faqOf(title, ps.filter((p) => !(p.k === 'p' && p.html.includes('not-prose'))), bands);
+  if (faq && !ps.some((p) => p.k === 'p' && p.html.includes('not-prose'))) {
+    const { before, after, ...f } = faq;
+    const lone = (x) => ({ type: 'prose', title: '', blocks: [x] });
+    // (the picture of the section stays with it; other pictures keep their place before or after it)
+    const own = s.img ? { src: s.img, alt: s.imgAlt || '' } : after.shift() || null;
+    return [...before.map(lone), own ? { ...f, img: own.src, imgAlt: own.alt || '' } : f, ...after.map(lone)];
+  }
 
   // steps: a titled section whose list reads as a sequence
   const list = ps.find((p) => p.k === 'list' && p.items.length >= 3 && !p.items.every((it) => it.linkOnly));
@@ -125,8 +140,11 @@ function convert(s, design) {
         ? { type: 'steps', title, intro, lead: strip(before.map((p) => p.text).join(' ')), items }
         : { type: 'features', title, intro, items };
       if (stepLike && before.some((p) => /<a\b/.test(p.html))) { /* a link in the lead would be lost in a plain lead: keep it as its own text */ main.lead = ''; }
-      const tail = after.length ? [{ type: 'prose', title: '', blocks: asBlocks(after) }] : [];
-      if (s.img && !stepLike) return [toAbout({ ...main, img: s.img, imgAlt: s.imgAlt }), ...tail];
+      // (the paragraphs after the list stay in the section, after the list, when the design has a place for them)
+      const inside = bands && !stepLike && after.length > 0 && after.every((p) => p.k === 'p');
+      if (inside) main.after = asBlocks(after);
+      const tail = after.length && !inside ? [{ type: 'prose', title: '', blocks: asBlocks(after) }] : [];
+      if (s.img && !stepLike) return [bands ? { ...main, img: s.img, imgAlt: s.imgAlt } : toAbout({ ...main, img: s.img, imgAlt: s.imgAlt }), ...tail];
       return [main, ...tail];
     }
   }
@@ -156,7 +174,9 @@ export function restructure(sections, design) {
   for (let s of sections) {
     if ((s.type === 'prose' || s.type === 'split') && s.blocks) {
       if (s.img && DECOR.test(String(s.img).split('/').pop().replace(/\.svg$/i, ''))) s = { ...s, img: '' };
-      out.push(...convert(s, design));
+      const made = convert(s, design);
+      if (s.lead) for (const m of made) m.lead = true;
+      out.push(...made);
     } else out.push(s);
   }
   // a section of one picture only

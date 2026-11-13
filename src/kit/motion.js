@@ -86,6 +86,17 @@ export const DEFAULT_MOTION = {
   editorial: PROFILE('fade-up', 'fade', 'slow'),
   clarity: PROFILE('fade', 'fade-up', 'fast'),
   local: PROFILE('fade-up', 'fade-up'),
+  // (Signature moves through the motion toolkit: its buttons lift, the rest is set on its own markup)
+  signature: { button: { hover: 'lift' }, buttonPrimary: { hover: 'lift' }, buttonAccent: { hover: 'lift' }, buttonGhost: { hover: 'lift' }, buttonLight: { hover: 'lift' }, buttonOutline: { hover: 'lift' } },
+  crest: { button: { hover: 'lift' }, buttonPrimary: { hover: 'lift' }, buttonAccent: { hover: 'lift' }, buttonGhost: { hover: 'lift' }, buttonLight: { hover: 'lift' }, buttonOutline: { hover: 'lift' } },
+  nova: { button: { hover: 'lift' }, buttonPrimary: { hover: 'lift' }, buttonAccent: { hover: 'lift' }, buttonGhost: { hover: 'lift' }, buttonLight: { hover: 'lift' }, buttonOutline: { hover: 'lift' } },
+  lumen: { button: { hover: 'lift' }, buttonPrimary: { hover: 'lift' }, buttonAccent: { hover: 'lift' }, buttonGhost: { hover: 'lift' }, buttonLight: { hover: 'lift' }, buttonOutline: { hover: 'lift' } },
+  vertex: { button: { hover: 'lift' }, buttonPrimary: { hover: 'lift' }, buttonAccent: { hover: 'lift' }, buttonGhost: { hover: 'lift' }, buttonLight: { hover: 'lift' }, buttonOutline: { hover: 'lift' } },
+  horizon: { button: { hover: 'lift' }, buttonPrimary: { hover: 'lift' }, buttonAccent: { hover: 'lift' }, buttonGhost: { hover: 'lift' }, buttonLight: { hover: 'lift' }, buttonOutline: { hover: 'lift' } },
+  harbor: PROFILE('fade-up', 'fade-up', 'slow'),
+  operator: PROFILE('fade-up', 'fade-up'),
+  atlas: PROFILE('fade', 'fade-up', 'slow'),
+  meridian: PROFILE('fade-up', 'zoom-in'),
 };
 export const motionDefaults = (designId) => DEFAULT_MOTION[designId] || {};
 // the defaults with what was chosen on top: per part, per setting

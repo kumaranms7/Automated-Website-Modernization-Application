@@ -10,7 +10,7 @@ const inner = ($, el) => {
   const html = cleanHtml($, el);
   return html.replace(/^<[^>]+>/, '').replace(/<\/[^>]+>$/, '').trim();
 };
-const text = ($, el) => plain($(el).clone().find('br').replaceWith(' ').end().text());
+const text = ($, el) => plain($(el).toArray().map((e) => $(e).html() || '').join(' '));
 
 export function extractHome($, relPath, common) {
   const banner = $('section.main-banner').first();

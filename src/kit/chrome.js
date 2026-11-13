@@ -1,5 +1,6 @@
 import { esc, icon, btn, T } from './ui.js';
 import { tagParts, applySection, cleanStyle } from './parts.js';
+import { NEW_HEADER, NEW_FOOTER } from './designs/index.js';
 
 // The header and the footer of the kit designs (Tailwind), each in a few styles.
 
@@ -21,6 +22,7 @@ export const HEADER = {
   center: (K) => { const h = Math.ceil(K.nav.length / 2); return `<header class="sticky top-0 z-50 border-b border-light bg-paper/90 py-3.5 backdrop-blur-md transition data-[scrolled]:shadow-k1" data-k-header><div class="${T.wrap} flex items-center gap-6 lg:grid lg:grid-cols-[1fr_auto_1fr]"><nav class="flex items-center gap-1 max-lg:hidden" aria-label="Main">${navLinks(K, K.nav.slice(0, h))}</nav><span class="lg:justify-self-center">${logo(K)}</span><nav class="flex items-center justify-end gap-1 max-lg:hidden" aria-label="More">${navLinks(K, K.nav.slice(h))}${btn({ text: K.site.ctaLabel || 'Get a quote', href: K.u(K.site.ctaHref || '#contact') }, 'primary', false)}</nav>${menuBtn()}</div>${drawer(K, K.nav)}</header>`; },
 };
 
+Object.assign(HEADER, NEW_HEADER);
 const social = () => `<div class="mt-6 flex gap-2.5">${[['globe', 'Facebook'], ['camera', 'Instagram'], ['mail', 'Email']].map(([i, l]) => `<a class="grid size-10 place-items-center rounded-full border border-current/20 transition hover:-translate-y-0.5 hover:border-brand hover:bg-brand hover:text-white" href="#" aria-label="${l}">${icon(i, 'size-[1.1rem]')}</a>`).join('')}</div>`;
 const cols = (K, dark) => {
   const s = K.site;
@@ -38,7 +40,8 @@ export const FOOTER = {
   mini: (K) => `<footer class="border-t border-default bg-paper-alt text-secondary max-sm:pb-20"><div class="${T.wrap}">${legal(K, 'border-transparent').replace('mt-[clamp(2.5rem,5vw,4rem)]', 'mt-0')}</div></footer>`,
 };
 
-export const mobileCta = (K) => (K.site.phone?.digits ? `<div class="fixed inset-x-3 bottom-3 z-40 flex gap-2.5 sm:hidden"><a class="${T.btn} ${T.btnPrimary} flex-1 shadow-k3" href="tel:${K.site.phone.digits}">${icon('phone', 'size-5')}Call now</a><a class="${T.btn} ${T.btnLight} flex-1 border-default shadow-k3" href="${esc(K.u(K.site.ctaHref || '#contact'))}">Free quote</a></div>` : '');
+Object.assign(FOOTER, NEW_FOOTER);
+export const mobileCta = (K) => (K.site.phone?.digits ? `<div class="fixed inset-x-3 bottom-3 z-40 flex gap-2.5 sm:hidden"><a class="${T.btn} ${T.btnPrimary} flex-1 shadow-k3" href="tel:${K.site.phone.digits}">${icon('phone', 'size-5')}Call now</a><a class="${T.btn} ${T.btnLight} flex-1 border-default shadow-k3" href="${esc(K.u(K.site.ctaHref || '#contact'))}">${esc(K.real && K.site.ctaLabel && K.site.ctaLabel.length <= 18 ? K.site.ctaLabel : 'Free quote')}</a></div>` : '');
 
 // edit: the roots are marked so the editor can select them
 export function chromeHtml(design, K, { edit = false } = {}) {

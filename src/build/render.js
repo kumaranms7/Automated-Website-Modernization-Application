@@ -114,7 +114,7 @@ ${ld.filter((x) => x.json).map((x) => `<script type="application/ld+json">${x.js
 ${(model.head.extraLd || []).map((o) => `<script type="application/ld+json">${JSON.stringify(o).replace(/</g, '\\u003c')}</script>`).join('\n')}
 ${model.protected.headScripts.join('\n')}
 </head>
-<body data-layout="${layout}" data-page="${esc(rel)}" ${kit ? `class="k-body" style="${designVars(kit.design)}"` : 'class="bg-surface font-sans text-ink antialiased"'}>
+<body data-layout="${layout}" data-page="${esc(rel)}" ${kit ? `class="k-body" data-k-motion="${kit.design.motion || 'full'}" data-k-anim="${kit.design.anim || 'rise'}" data-k-skin="${kit.design.skin || 'day'}" data-k-pat="${kit.design.pattern || 'none'}" style="${designVars(kit.design)}"` : 'class="bg-surface font-sans text-ink antialiased"'}>
 ${model.protected.bodyNoscript}
 ${kit ? kit.header : chromeHtml('header', () => header(site, u, pageChrome(spec, 'header')).replace('<header class=', '<header data-sec="header" class='))}
 <main id="main">

@@ -2,8 +2,9 @@ import path from 'node:path';
 import { loadClient, clientDir, readJson } from '../config.js';
 import { getProfile } from '../profile/store.js';
 import { loadActive, saveDraft } from '../template/store.js';
-import { DESIGNS, DESIGN_IDS } from '../kit/designs.js';
+import { DESIGNS, DESIGN_IDS, OFFERED_IDS } from '../kit/designs.js';
 import { tailor } from '../kit/tailor.js';
+import { DEFAULT_SPEC } from '../template/spec.js';
 import { PACK_IDS, packById } from '../kit/packs.js';
 import { placeholderContent } from '../kit/content.js';
 import { renderKitPage, designCss, designVars, context } from '../kit/page.js';
@@ -38,6 +39,7 @@ async function load(slug, packId) {
   for (const kind of PAGES) {
     const b = spec.extras?.banners?.[kind];
     if (b?.src) pc.pages[kind].hero = { ...pc.pages[kind].hero, image: { src: `/original/${slug}/${b.src}`, alt: b.alt || '' } };
+    if (b?.video?.src) pc.pages[kind].hero = { ...pc.pages[kind].hero, video: { src: `/original/${slug}/${b.video.src}` } };
   }
   return { client, profile, spec, pc, pack: pc.pack, seedKey: `${pc.site.name}|${pc.pack.id}` };
 }
@@ -54,22 +56,26 @@ function styleMeta(spec) {
 export async function kitState(slug) {
   const { spec, pack, profile, seedKey } = await load(slug);
   const detected = placeholderContent(profile, {}).pack;
-  const current = spec.kit?.design || DESIGN_IDS[0];
+  const current = spec.kit?.design || OFFERED_IDS[0];
   const tailored = designOf(current, spec, seedKey);
   return {
     selected: spec.kit || { design: '', pack: '', sections: {} },
     pack: { id: pack.id, label: pack.label },
     detected: { id: detected.id, label: detected.label },
     packs: PACK_IDS.map((id) => ({ id, label: packById(id).label })),
-    designs: DESIGN_IDS.map((id) => { const d = designOf(id, spec, seedKey); return { id, name: DESIGNS[id].name, badge: DESIGNS[id].badge, blurb: DESIGNS[id].blurb, fonts: d.fonts, header: d.header, footer: d.footer, sections: d.home.map((b) => `${b.type}:${b.variant}`) }; }),
+    designs: OFFERED_IDS.map((id) => { const d = designOf(id, spec, seedKey); return { id, name: DESIGNS[id].name, badge: DESIGNS[id].badge, blurb: DESIGNS[id].blurb, fonts: d.fonts, header: d.header, footer: d.footer, sections: d.home.map((b) => `${b.type}:${b.variant}`) }; }),
     // the sections of the chosen design for each kind of page, and every layout that can be used in their place
     blueprints: { home: tailored.home, inner: tailored.inner, contact: tailored.contact },
-    variants: VARIANTS,
+    variants: ownVariants(tailored),
     style: styleMeta(spec),
     // the header, footer and top bar of the chosen design as they are now, and the layouts there are for them
-    chrome: { header: tailored.header, footer: tailored.footer, topbar: Boolean(tailored.topbar), variants: { header: Object.keys(HEADER), footer: Object.keys(FOOTER) } },
+    chrome: { header: tailored.header, footer: tailored.footer, topbar: Boolean(tailored.topbar), variants: { header: Object.keys(HEADER).filter((v) => (tailored.prefix ? v === tailored.header : !/^[a-z]{2}$/.test(v) || v === 'mini')), footer: Object.keys(FOOTER).filter((v) => (tailored.prefix ? v === tailored.footer : !/^[a-z]{2}$/.test(v))) } },
   };
 }
+
+// the layouts a design offers: its own (their names start with the design's prefix); a design without a prefix offers the shared ones
+const ownLayout = (design, v) => (design.prefix ? String(v).startsWith(design.prefix) : !/^[a-z]{2}-/.test(String(v)));
+const ownVariants = (design) => ({ hero: Object.keys(HERO).filter((v) => ownLayout(design, v) && v !== design.innerHero), ...Object.fromEntries(Object.entries(LIBRARY).map(([k, v]) => [k, Object.keys(v).filter((x) => ownLayout(design, x))]).filter(([, v]) => v.length)) });
 
 export async function chooseDesign(slug, { design, pack, sections, pageSection, pageOrder, chrome, dropRelated } = {}) {
   if (design && !DESIGNS[design]) throw new Error('Unknown design');
@@ -107,7 +113,7 @@ export async function chooseDesign(slug, { design, pack, sections, pageSection, 
     } else if (pageSection.reset) delete page[k];
     else if (k === 'hero' && 'bg' in pageSection) { // the background of the hero of an inner page: plain, or a picture of the page under an overlay
       const cur = { ...(page[k] || {}) };
-      if (pageSection.bg === 'photo') { cur.bg = 'photo'; if (typeof pageSection.image === 'string' && pageSection.image) cur.image = pageSection.image.slice(0, 600); else delete cur.image; } else { delete cur.bg; delete cur.image; }
+      if (pageSection.bg === 'photo') { cur.bg = 'photo'; if (typeof pageSection.image === 'string' && pageSection.image) cur.image = pageSection.image.slice(0, 600); else delete cur.image; } else { cur.bg = 'plain'; delete cur.image; }
       if (Object.keys(cur).length) page[k] = cur; else delete page[k];
     } else if ('style' in pageSection && !pageSection.variant && !pageSection.role && !('html' in pageSection) && !('hide' in pageSection)) { // the styles of the parts of one section of one page
       const cur = { ...(page[k] || {}) };
@@ -127,7 +133,12 @@ export async function chooseDesign(slug, { design, pack, sections, pageSection, 
   if (sections) for (const k of PAGES) if (Array.isArray(sections[k])) kit.sections[k] = sections[k];
   if (Array.isArray(pageOrder?.keys) && pageOrder.path) kit.pageOrder[pageOrder.path] = pageOrder.keys;
   const patch = { kit };
-  if (design) patch.tokens = { fontHeading: DESIGNS[design].fonts.heading, fontBody: DESIGNS[design].fonts.body };
+  if (design) {
+    const vars = DESIGNS[design].vars || {};
+    const weight = [400, 600, 700, 800].reduce((best, w) => (Math.abs(w - Number(vars['--k-h-weight'] || 700)) < Math.abs(best - Number(vars['--k-h-weight'] || 700)) ? w : best), 700);
+    patch.tokens = { fontHeading: DESIGNS[design].fonts.heading, fontBody: DESIGNS[design].fonts.body, ...(design !== spec.kit?.design ? { headingWeight: weight, headingCase: vars['--k-h-case'] === 'uppercase' ? 'uppercase' : 'none', radius: DEFAULT_SPEC.tokens.radius } : {}) };
+  }
+  if (design !== undefined && design !== spec.kit?.design) Object.assign(patch, { tweaks: [], ops: [], htmlEdits: [] });
   await saveDraft(slug, patch, { note: chrome ? 'Header, footer or top bar customised' : pageSection || pageOrder ? 'Section customised' : sections ? 'Design sections changed' : design ? `Design: ${DESIGNS[design].name}` : design === '' ? 'Classic template' : 'Business type' });
   return kitState(slug);
 }
@@ -145,7 +156,7 @@ export function kitRoutes(app, wrap) {
     const types = [];
     for (const [type, variants] of Object.entries(LIBRARY)) {
       const layouts = [];
-      for (const [variant, fn] of Object.entries(variants)) { try { layouts.push({ variant, html: applyTones([fn(pc.data[type] || {}, K)], [{}])[0] }); } catch { /* a layout that cannot be drawn here is not offered */ } }
+      for (const [variant, fn] of Object.entries(variants)) { if (!ownLayout(design, variant)) continue; try { layouts.push({ variant, html: applyTones([fn(pc.data[type] || {}, K)], [{}])[0] }); } catch { /* a layout that cannot be drawn here is not offered */ } }
       if (layouts.length) types.push({ type, title: TITLES[type] || type, layouts });
     }
     res.json({ design: design.id, types });
@@ -186,10 +197,10 @@ export function kitRoutes(app, wrap) {
       // one accordion per kind of section; inside it every layout of that kind, one under the other
       const label = (t, v) => `<div class="lib-tag"><b>${esc(t)}</b><span>${esc(v)}</span></div>`;
       const groups = [];
-      groups.push(['hero', 'Hero', Object.entries(HERO).map(([v, fn]) => label('hero', v) + fn(pc.pages.home.hero, K))]);
-      for (const [type, variants] of Object.entries(LIBRARY)) groups.push([type, TITLES[type] || type, Object.entries(variants).map(([v, fn]) => label(type, v) + fn(pc.data[type] || {}, K))]);
-      groups.push(['header', 'Header', Object.entries(HEADER).map(([v, fn]) => label('header', v) + fn(K))]);
-      groups.push(['footer', 'Footer', Object.entries(FOOTER).map(([v, fn]) => label('footer', v) + fn(K))]);
+      groups.push(['hero', 'Hero', Object.entries(HERO).filter(([v]) => ownLayout(design, v)).map(([v, fn]) => label('hero', v) + fn(pc.pages.home.hero, K))]);
+      for (const [type, variants] of Object.entries(LIBRARY)) { const list = Object.entries(variants).filter(([v]) => ownLayout(design, v)).map(([v, fn]) => label(type, v) + fn(pc.data[type] || {}, K)); if (list.length) groups.push([type, TITLES[type] || type, list]); }
+      groups.push(['header', 'Header', Object.entries(HEADER).filter(([v]) => (design.prefix ? v === design.header : !/^[a-z]{2}$/.test(v))).map(([v, fn]) => label('header', v) + fn(K))]);
+      groups.push(['footer', 'Footer', Object.entries(FOOTER).filter(([v]) => (design.prefix ? v === design.footer : !/^[a-z]{2}$/.test(v))).map(([v, fn]) => label('footer', v) + fn(K))]);
       const toc = groups.map(([id, title, list]) => `<a href="#lib-${id}" data-open="lib-${id}">${esc(title)} <i>${list.length}</i></a>`).join('');
       const acc = groups.map(([id, title, list]) => `<details class="lib-acc" id="lib-${id}"><summary><span>${esc(title)}</span><small>${list.length} layout${list.length === 1 ? '' : 's'}</small></summary><div class="lib-body">${list.join('\n')}</div></details>`).join('\n');
       const LIB_CSS = '.lib-bar{position:sticky;top:0;z-index:90;display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 16px;background:#0f172a;color:#fff;font:600 13px/1 system-ui}.lib-bar b{font-size:15px;margin-right:8px}.lib-bar a{color:#cbd5e1;text-decoration:none;padding:6px 10px;border-radius:999px;background:rgb(255 255 255/.08)}.lib-bar a:hover{background:rgb(255 255 255/.2);color:#fff}.lib-bar i{font-style:normal;opacity:.6;margin-left:4px}.lib-bar button{margin-left:auto;cursor:pointer;border:0;border-radius:8px;padding:7px 12px;font:inherit;background:#6366f1;color:#fff}.lib-bar button+button{margin-left:0;background:rgb(255 255 255/.14)}.lib-acc{border-bottom:1px solid #e2e8f0;background:#f8fafc}.lib-acc{scroll-margin-top:var(--bar,46px)}.lib-acc>summary{position:sticky;top:var(--bar,46px);z-index:80;display:flex;justify-content:space-between;align-items:center;gap:12px;cursor:pointer;list-style:none;padding:16px 20px;background:#fff;color:#0f172a;font:800 17px/1.2 system-ui;border-bottom:1px solid #e2e8f0}.lib-acc>summary::-webkit-details-marker{display:none}.lib-acc>summary::after{content:"+";font-size:22px;font-weight:600;color:#6366f1}.lib-acc[open]>summary::after{content:"\u2212"}.lib-acc>summary small{margin-left:auto;font:500 13px system-ui;color:#64748b}.lib-tag{display:flex;gap:10px;align-items:center;padding:8px 16px;background:#1e293b;color:#fff;font:600 12px/1 system-ui}.lib-tag span{opacity:.7;text-transform:capitalize}.lib-body{display:block}';

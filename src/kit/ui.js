@@ -87,3 +87,10 @@ export function sec(inner, { tone = '', cls = '', id = '', rise = true } = {}) {
 }
 export const toneClass = (tone) => TONE[tone] || '';
 export const TONE_KEYS = Object.keys(TONE);
+
+// a looping background video behind a hero: muted, inline, the picture as its poster, and a button that pauses it (the visitor's choice,
+// and the browser's: the script stops it for visitors who prefer less motion). Place it in a relatively positioned, clipped box.
+export const videoLayer = (video, poster = '', cls = '') => (video?.src
+  ? `<video class="absolute inset-0 -z-20 size-full object-cover ${cls}" data-k-video autoplay muted loop playsinline preload="metadata"${poster ? ` poster="${esc(poster)}"` : ''} aria-hidden="true"><source src="${esc(video.src)}" type="${/\.webm(\?|$)/i.test(video.src) ? 'video/webm' : 'video/mp4'}"></video>`
+  : '');
+export const videoPause = (cls = '') => `<button type="button" data-k-vpause aria-pressed="false" aria-label="Pause the background video" class="absolute right-5 bottom-5 z-10 grid size-11 place-items-center rounded-full border border-white/40 bg-black/40 text-white backdrop-blur transition hover:bg-black/60 ${cls}"><svg data-pause viewBox="0 0 24 24" class="size-4 fill-current" aria-hidden="true"><path d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z"/></svg><svg data-play viewBox="0 0 24 24" class="size-4 fill-current" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg></button>`;

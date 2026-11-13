@@ -123,6 +123,11 @@ export async function buildClient(slug, { limit, types, only, content = 'approve
     return keep;
   };
   const site = { ...siteRaw, nav: await prune(siteRaw.nav), footerCols: await Promise.all((siteRaw.footerCols || []).map(async (c) => ({ ...c, items: await prune(c.items) }))) };
+  if (spec.kit?.design) {
+    const { loadHeaderLinks, loadCommonSections } = await import('./site-extra.js');
+    site.headerLinks = await prune(siteRaw.headerLinks || (await loadHeaderLinks(client)));
+    site.common = await loadCommonSections(client, site, { home: spec.pages?.home || 'index.html', pages: pages.filter((x) => /\.html?$/i.test(x.path || '')).map((x) => x.path) });
+  }
   // one canonical domain for the whole site (Business profile), and the .htaccess redirects that take a page out of it
   const canon = await loadCanonicalContext(slug, client);
   const canonicalHost = new URL(canon.domain).host;

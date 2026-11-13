@@ -44,15 +44,39 @@ function detectCardGrid($, node) {
     const $k = $(k);
     const head = $k.find('h1,h2,h3,h4,h5,h6').first();
     const a = $k.is('a') ? $k : $k.find('a[href]').first();
-    const img = $k.find('img').filter((_, i) => !/\.svg(\?|$)/i.test($(i).attr('src') || '')).first();
-    const icon = $k.find('img').filter((_, i) => /\.svg(\?|$)/i.test($(i).attr('src') || '')).first();
-    const text = $k.find('p').toArray().map((p) => plain($(p).text())).filter(Boolean).join(' ');
-    return { title: plain(head.text()), text, href: a.attr('href') || '', img: img.attr('src') || '', imgAlt: img.attr('alt') || '', icon: icon.attr('src') || '' };
+    // the picture of the card is its first picture that is not an SVG; an SVG, or a second picture, is its icon
+    const pics = $k.find('img').toArray();
+    const isSvg = (i) => /\.svg(\?|$)/i.test($(i).attr('src') || '');
+    // a card without a heading is named by its link or its bold line
+    const title = plain(head.text()) || plain(a.text()) || plain($k.find('strong, b').first().text());
+    // (the arrow of a button is decoration, not the card's icon)
+    const decor = (i) => { const link = $(i).closest('a'); return /(^|[-_])(btn|arrow|ar|chevron|caret)([-_.]|$)/i.test(($(i).attr('src') || '').split('/').pop()) || (link.length > 0 && !link.is($k) && plain(link.text()) === title); };
+    const photo = pics.find((i) => !isSvg(i) && !decor(i));
+    const img = $(photo || []), icon = $(pics.find((i) => isSvg(i) && !decor(i)) || pics.find((i) => photo && i !== photo && !decor(i)) || []);
+    const text = $k.find('p').toArray().map((p) => plain($(p).text())).filter((t) => t && t !== title).join(' ');
+    return { title, text, href: a.attr('href') || '', img: img.attr('src') || '', imgAlt: img.attr('alt') || '', icon: icon.attr('src') || '' };
   }).filter((i) => i.title && (i.text || i.img));
   if (items.length < 3 || items.length < kids.length * 0.8) return null;
   if (items.some((i) => i.text.length > 700)) return null;
   const seen = new Set();
   return items.filter((i) => !seen.has(i.title + i.text) && seen.add(i.title + i.text));
+}
+
+function detectContact($, node) {
+  const kids = $(node).children().toArray().filter(isTag);
+  if (kids.length < 2 || kids.length > 6) return null;
+  const items = kids.map((k) => {
+    const $k = $(k);
+    const head = $k.find('h1,h2,h3,h4,h5,h6,strong,b').first();
+    const title = plain(head.text());
+    const rest = $k.clone(); rest.find('h1,h2,h3,h4,h5,h6,strong,b').first().remove();
+    const text = plain(rest.text());
+    const a = $k.find('a[href^="tel:"], a[href^="mailto:"]').first();
+    return { icon: $k.find('img').first().attr('src') || '', title, text, href: a.attr('href') || '' };
+  }).filter((i) => i.text && i.text.length <= 160);
+  if (items.length < 2 || items.length < kids.length) return null;
+  const tells = items.filter((i) => /\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}|@[\w-]+\.[a-z]{2,}|\b\d{5}(?:-\d{4})?\b|\b(?:mon|tue|wed|thu|fri|sat|sun)[a-z]*\b.*\d|\bhours\b/i.test(`${i.title} ${i.text}`)).length;
+  return tells >= 2 ? items : null;
 }
 
 function detectReviews($, node) {
@@ -77,7 +101,7 @@ function walk($, nodes, ctx, out) {
     const tag = node.name;
 
     if (/^(header|footer|nav)$/.test(tag) || /\b(btm-footer|fix-info|fixed-bottom-bar)\b/.test(cls)) continue;
-    if (/\binner-main-cotent-right\b/.test(cls)) {
+    if (/\binner-main-cotent-right\b/.test(cls) && ($n.find('#mf_placeholder').length || $n.find('.get-quote-heading').length || !plain($n.text()))) {
       ctx.sideForm = true;
       ctx.quoteHeading = ctx.quoteHeading || {
         title: plain($n.find('.get-quote-heading').clone().children().remove().end().text()),
@@ -88,7 +112,8 @@ function walk($, nodes, ctx, out) {
     if ($n.is('#mf_placeholder')) { out.push({ t: 'form', zone: ctx.zone }); continue; }
     if (/\bget-in-touch-today-sec\b/.test(cls)) {
       const a = $n.find('a[href^="tel:"]').first();
-      out.push({ t: 'cta', title: plain($n.find('h4').first().text()), text: plain($n.find('p').first().text()), href: (a.attr('href') || '').trim(), label: plain(a.text()) || 'Call now', zone: ctx.zone });
+      const pic = $n.find('img').first();
+      out.push({ t: 'cta', title: plain($n.find('h4').first().text()), text: plain($n.find('p').first().text()), href: (a.attr('href') || '').trim(), label: plain(a.text()) || 'Call now', ...(pic.attr('src') ? { img: pic.attr('src'), imgAlt: pic.attr('alt') || '' } : {}), zone: ctx.zone });
       continue;
     }
     if (/\bfree-quote\b/.test(cls)) {
@@ -144,6 +169,13 @@ function walk($, nodes, ctx, out) {
         continue;
       }
     }
+    if (tag === 'ul' || tag === 'ol') {
+      // a list of the ways to reach the business, or of pictures with a linked title, is more than a list of words
+      const ways = detectContact($, node);
+      if (ways) { out.push({ t: 'contact', items: ways, zone: ctx.zone }); continue; }
+      const grid = $n.find('img').length >= 3 ? detectCardGrid($, node) : null;
+      if (grid) { out.push({ t: 'cardgrid', items: grid, zone: ctx.zone }); continue; }
+    }
     if (['p', 'ul', 'ol', 'table', 'blockquote', 'dl', 'pre'].includes(tag)) {
       if (!isEmpty($n)) out.push({ t: 'html', html: cleanHtml($, node), zone: ctx.zone });
       continue;
@@ -156,6 +188,8 @@ function walk($, nodes, ctx, out) {
     if (['div', 'section', 'ul', 'ol', 'article'].includes(tag) && !/\binner-main-cotent-left\b/.test(cls)) {
       const rv = detectReviews($, node);
       if (rv && !$n.find('h1,h2').length) { out.push({ t: 'reviews', items: rv, zone: ctx.zone }); continue; }
+      const ways = ['ul', 'div'].includes(tag) ? detectContact($, node) : null;
+      if (ways) { out.push({ t: 'contact', items: ways, zone: ctx.zone }); continue; }
       const grid = detectCardGrid($, node);
       if (grid) { out.push({ t: 'cardgrid', items: grid, zone: ctx.zone }); continue; }
     }

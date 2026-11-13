@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 import { designById } from './designs.js';
-import { DEFAULT_SPEC } from '../template/spec.js';
+import { DEFAULT_SPEC, themeOf } from '../template/spec.js';
+import { hexToOklch, contrast, STEPS } from '../theme/color.js';
 
 // A design is not the same for every website. The six designs are directions; a website's own design is derived from them:
 //   1. what the user set in Configuration > Design settings (a setting that differs from the platform default is the user's decision:
@@ -39,20 +40,22 @@ export function tailor(designId, { spec = null, seedKey = '' } = {}) {
   const l = spec?.layout || {}, t = spec?.tokens || {};
 
   // 1. the configuration
-  if (changed(spec, 'layout', 'header') && HEADER_OF[l.header]) d.header = HEADER_OF[l.header];
-  if (changed(spec, 'layout', 'footer') && FOOTER_OF[l.footer]) d.footer = FOOTER_OF[l.footer];
+  // (typography and corners were set for the saved design: a design that is only being looked at keeps its own)
+  const own = !spec?.kit?.design || spec.kit.design === designId;
+  if (changed(spec, 'layout', 'header') && HEADER_OF[l.header] && !base.fixed) d.header = HEADER_OF[l.header];
+  if (changed(spec, 'layout', 'footer') && FOOTER_OF[l.footer] && !base.fixed) d.footer = FOOTER_OF[l.footer];
   if (changed(spec, 'layout', 'topbar')) d.topbar = Boolean(l.topbar);
-  if (changed(spec, 'layout', 'hero') && HERO_OF[l.hero] && d.home[0]?.type === 'hero') d.home[0] = { type: 'hero', variant: HERO_OF[l.hero] };
-  if (changed(spec, 'tokens', 'radius') && RADIUS[t.radius]) { const [r, rs, rb] = RADIUS[t.radius]; d.vars['--k-r'] = r; d.vars['--k-r-sm'] = rs; d.vars['--k-r-btn'] = rb; }
+  if (changed(spec, 'layout', 'hero') && HERO_OF[l.hero] && d.home[0]?.type === 'hero' && !base.fixed) d.home[0] = { type: 'hero', variant: HERO_OF[l.hero] };
+  if (own && changed(spec, 'tokens', 'radius') && RADIUS[t.radius]) { const [r, rs, rb] = RADIUS[t.radius]; d.vars['--k-r'] = r; d.vars['--k-r-sm'] = rs; d.vars['--k-r-btn'] = rb; }
   const cardsFlat = changed(spec, 'layout', 'cards') && l.cards !== 'shadow';
   const shadow = changed(spec, 'tokens', 'shadow') ? t.shadow : cardsFlat ? 'none' : '';
   if (shadow && SHADOW[shadow]) { const [a, b, c, g] = SHADOW[shadow]; Object.assign(d.vars, { '--k-shadow-1': a, '--k-shadow-2': b, '--k-shadow-3': c, '--k-glow': g }); }
   if (changed(spec, 'tokens', 'density') && DENSITY[t.density]) d.vars['--k-sec-y'] = DENSITY[t.density];
   if (changed(spec, 'tokens', 'container') && WIDTH[t.container]) d.vars['--k-wrap'] = WIDTH[t.container];
-  if (changed(spec, 'tokens', 'headingCase')) d.vars['--k-h-case'] = t.headingCase === 'uppercase' ? 'uppercase' : t.headingCase === 'capitalize' ? 'capitalize' : 'none';
-  if (changed(spec, 'tokens', 'headingWeight')) d.vars['--k-h-weight'] = String(t.headingWeight);
-  if (changed(spec, 'tokens', 'fontHeading')) d.fonts = { ...d.fonts, heading: t.fontHeading };
-  if (changed(spec, 'tokens', 'fontBody')) d.fonts = { ...d.fonts, body: t.fontBody };
+  if (own && changed(spec, 'tokens', 'headingCase')) d.vars['--k-h-case'] = t.headingCase === 'uppercase' ? 'uppercase' : t.headingCase === 'capitalize' ? 'capitalize' : 'none';
+  if (own && changed(spec, 'tokens', 'headingWeight')) d.vars['--k-h-weight'] = String(t.headingWeight);
+  if (own && changed(spec, 'tokens', 'fontHeading')) d.fonts = { ...d.fonts, heading: t.fontHeading };
+  if (own && changed(spec, 'tokens', 'fontBody')) d.fonts = { ...d.fonts, body: t.fontBody };
 
   // 2. the website's own seed: some sections take another layout of the same kind
   const rand = rng(seedOf(`${seedKey}|${designId}`));
@@ -60,7 +63,7 @@ export function tailor(designId, { spec = null, seedKey = '' } = {}) {
   for (const kind of ['home', 'inner', 'contact']) {
     d[kind] = d[kind].map((b) => {
       const sib = SIBLINGS[b.type];
-      if (!sib || b.type === 'hero' || rand() > 0.38) return b;
+      if (!sib || b.type === 'hero' || base.fixed || rand() > 0.38) return b; // (a design with layouts of its own keeps them)
       const options = sib.filter((v) => v !== b.variant && !(used[b.type] || []).includes(v));
       if (!options.length) return b;
       const v = options[Math.floor(rand() * options.length)];
@@ -71,15 +74,36 @@ export function tailor(designId, { spec = null, seedKey = '' } = {}) {
 
   // 3. the sections the user chose for a kind of page
   for (const kind of ['home', 'inner', 'contact']) {
-    const mine = spec?.kit?.sections?.[kind];
-    if (Array.isArray(mine) && mine.length) d[kind] = mine.map((b) => ({ ...b }));
+    const mine = (spec?.kit?.design || designId) === designId ? spec?.kit?.sections?.[kind] : null; // (the choices belong to the design they were made on)
+    if (Array.isArray(mine) && mine.length) {
+      if (base.prefix) { const own = mine.filter((b) => String(b.variant || '').startsWith(base.prefix)); d[kind] = d[kind].map((b) => { const m = own.find((x) => x.type === b.type); return m ? { ...b, ...m } : b; }); }
+      else d[kind] = mine.map((b) => ({ ...b }));
+    }
   }
 
   // 4. the header, footer and top bar chosen for the whole theme
-  const ch = spec?.kit?.chrome || {};
+  const ch = (spec?.kit?.design || designId) === designId ? spec?.kit?.chrome || {} : {}; // (chosen on the design it belongs to)
   if (ch.header?.variant) d.header = ch.header.variant;
   if (ch.footer?.variant) d.footer = ch.footer.variant;
   if (ch.topbar?.show) d.topbar = ch.topbar.show === 'yes';
   d.chrome = { header: ch.header || {}, footer: ch.footer || {}, topbar: ch.topbar || {} };
+
+  // 5. the colours a design draws with come from the website's theme. The "pop" colour of its calls to action is the livelier of the
+  //    theme's secondary and accent colours (or the one chosen in Design settings); a grey one gives way to the primary colour.
+  const web = spec?.extras?.web || {};
+  try {
+    const theme = themeOf(spec || DEFAULT_SPEC);
+    const chroma = (n) => hexToOklch(theme.scales[n][500]).c;
+    let pop = ['primary', 'secondary', 'accent'].includes(web.pop) ? web.pop : chroma('accent') > chroma('secondary') + 0.02 ? 'accent' : 'secondary';
+    if (!['primary', 'secondary', 'accent'].includes(web.pop) && chroma(pop) < 0.04) pop = 'primary';
+    for (const st of STEPS) d.vars[`--d-pop-${st}`] = `var(--th-${pop}-${st})`;
+    // a button in that colour carries white text: the first shade dark enough for it
+    const step = [600, 700, 800].find((x) => contrast(theme.scales[pop][x], '#ffffff') >= 4.5) || 800;
+    d.vars['--d-pop-btn'] = `var(--th-${pop}-${step})`;
+    d.pop = pop;
+  } catch { /* a theme that cannot be read: the stylesheet's own fallbacks apply */ }
+  // 6. Design settings > Website details and motion
+  d.web = web;
+  d.motion = ['full', 'subtle', 'off'].includes(web.motion?.level) ? web.motion.level : 'full';
   return d;
 }

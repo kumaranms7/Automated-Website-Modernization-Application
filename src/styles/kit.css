@@ -14,6 +14,8 @@
   --color-paper: var(--th-bg);
   --color-surf: var(--th-surface-card);
   --color-paper-alt: var(--th-bg-alt);
+  --color-day-50: var(--o-p-50); --color-day-100: var(--o-p-100); --color-day-200: var(--o-p-200); --color-day-300: var(--o-p-300); --color-day-400: var(--o-p-400); --color-day-500: var(--o-p-500);
+  --color-day-600: var(--o-p-600); --color-day-700: var(--o-p-700); --color-day-800: var(--o-p-800); --color-day-900: var(--o-p-900); --color-day-950: var(--o-p-950);
   --radius-k: var(--k-r);
   --radius-ks: var(--k-r-sm);
   --radius-kb: var(--k-r-btn);
@@ -126,3 +128,272 @@
 @keyframes ka-swing { 0%, 100% { transform: rotate(-5deg); } 50% { transform: rotate(5deg); } }
 @keyframes ka-spin { to { transform: rotate(360deg); } }
 @keyframes ka-glow { 0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--th-brand-primary) 0%, transparent); } 50% { box-shadow: 0 0 28px 6px color-mix(in srgb, var(--th-brand-primary) 45%, transparent); } }
+
+/* the motion toolkit (see KIT_SCRIPT): reveal lines, a switch that pauses everything that moves, the background video control */
+.k-js [data-k-line] { transform: scaleX(0); transform-origin: left center; transition: transform 1.3s cubic-bezier(.2, .7, .2, 1); }
+.k-js [data-k-line].k-r-in { transform: none; }
+.k-js [data-k-reveal] { opacity: 0; transform: translateY(18px); transition: opacity .8s cubic-bezier(.2, .7, .2, 1), transform .8s cubic-bezier(.2, .7, .2, 1); }
+.k-js [data-k-reveal].k-r-in { opacity: 1; transform: none; }
+.k-paused *, .k-paused *::before, .k-paused *::after { animation-play-state: paused !important; }
+[data-k-vpause] [data-play] { display: none; }
+[data-k-vpause][data-paused] [data-pause] { display: none; }
+[data-k-vpause][data-paused] [data-play] { display: block; }
+@media (prefers-reduced-motion: reduce) {
+  .k-js [data-k-line], .k-js [data-k-reveal] { transform: none; opacity: 1; transition: none; }
+  .k-marquee-track { animation: none !important; }
+}
+
+/* more of the motion toolkit: words that rise one after another, a picture that is uncovered, a slow zoom, back to top, a reading bar */
+.k-js [data-k-words] .k-wd { display: inline-block; overflow: hidden; vertical-align: top; padding-bottom: .1em; margin-bottom: -.1em; }
+.k-js [data-k-words] .k-wd > span { display: inline-block; transform: translateY(108%); transition: transform .95s cubic-bezier(.2, .7, .2, 1); transition-delay: calc(var(--i, 0) * 75ms); }
+.k-js [data-k-words].k-r-in .k-wd > span { transform: none; }
+.k-js [data-k-img] { clip-path: inset(0 0 100% 0); transition: clip-path 1.2s cubic-bezier(.2, .7, .2, 1); }
+.k-js [data-k-img].k-r-in { clip-path: inset(0); }
+@keyframes k-kenburns { from { transform: scale(1); } to { transform: scale(1.13); } }
+.k-zoom { animation: k-kenburns 28s ease-out both; }
+[data-k-top], [data-k-sticky] { opacity: 0; transform: translateY(14px); pointer-events: none; transition: opacity .35s, transform .35s; }
+[data-k-top][data-show], [data-k-sticky][data-show] { opacity: 1; transform: none; pointer-events: auto; }
+[data-k-progress] { transform: scaleX(0); transform-origin: left; }
+[data-scroll-track] { scroll-snap-type: x mandatory; scrollbar-width: none; }
+[data-scroll-track]::-webkit-scrollbar { display: none; }
+[data-scroll-track] > * { scroll-snap-align: start; }
+@media (prefers-reduced-motion: reduce) {
+  .k-js [data-k-words] .k-wd > span { transform: none; transition: none; }
+  .k-js [data-k-img] { clip-path: none; transition: none; }
+  .k-zoom { animation: none; }
+  [data-k-top], [data-k-sticky] { transition: none; }
+}
+
+/* the colour of calls to action: the livelier of the theme's secondary and accent colours (set per design by src/kit/tailor.js) */
+@theme inline {
+  --color-pop-50: var(--d-pop-50, var(--th-secondary-50));
+  --color-pop-100: var(--d-pop-100, var(--th-secondary-100));
+  --color-pop-200: var(--d-pop-200, var(--th-secondary-200));
+  --color-pop-300: var(--d-pop-300, var(--th-secondary-300));
+  --color-pop-400: var(--d-pop-400, var(--th-secondary-400));
+  --color-pop-500: var(--d-pop-500, var(--th-secondary-500));
+  --color-pop-600: var(--d-pop-600, var(--th-secondary-600));
+  --color-pop-700: var(--d-pop-700, var(--th-secondary-700));
+  --color-pop-800: var(--d-pop-800, var(--th-secondary-800));
+  --color-pop-900: var(--d-pop-900, var(--th-secondary-900));
+  --color-pop-950: var(--d-pop-950, var(--th-secondary-950));
+  --color-popbtn: var(--d-pop-btn, var(--th-secondary-700));
+}
+/* Design settings > Motion: "off" stills the page, "subtle" keeps the fades and drops the zoom */
+[data-k-motion="off"] *, [data-k-motion="off"] *::before, [data-k-motion="off"] *::after { animation: none !important; transition: none !important; }
+[data-k-motion="off"] [data-k-reveal], [data-k-motion="off"] [data-k-line] { opacity: 1 !important; transform: none !important; }
+[data-k-motion="off"] [data-k-img] { clip-path: none !important; }
+[data-k-motion="subtle"] .k-zoom { animation: none; }
+
+/* reveals that can be seen: a longer way to travel (from below, from a side, or growing in), and a picture uncovered from its edge */
+.k-js [data-k-reveal] { opacity: 0; transform: translateY(64px) scale(.96); filter: blur(7px); transition: opacity 1s ease, transform 1.2s cubic-bezier(.2, .8, .2, 1), filter 1.1s ease; }
+.k-js [data-k-reveal="left"] { transform: translateX(-96px) scale(.98); }
+.k-js [data-k-reveal="right"] { transform: translateX(96px) scale(.98); }
+.k-js [data-k-reveal="zoom"] { transform: scale(.86); filter: blur(10px); }
+.k-js [data-k-reveal].k-r-in { opacity: 1; transform: none; filter: none; }
+.k-js [data-k-img] { clip-path: inset(0 100% 0 0 round 1.2rem); transition: clip-path 1.3s cubic-bezier(.2, .8, .2, 1) .1s; }
+.k-js [data-k-img] img { transform: scale(1.14); transition: transform 1.7s cubic-bezier(.2, .8, .2, 1); }
+.k-js [data-k-img].k-r-in { clip-path: inset(0 0 0 0 round 1.2rem); }
+.k-js [data-k-img].k-r-in img { transform: none; }
+.k-body main { overflow-x: clip; }
+@media (max-width: 640px) { .k-js [data-k-reveal], .k-js [data-k-reveal="left"], .k-js [data-k-reveal="right"] { transform: translateY(44px); filter: none; } }
+[data-k-motion="subtle"] [data-k-reveal] { transform: translateY(22px) !important; filter: none !important; }
+@media (prefers-reduced-motion: reduce) {
+  .k-js [data-k-reveal] { opacity: 1; transform: none; filter: none; transition: none; }
+  .k-js [data-k-img], .k-js [data-k-img] img { clip-path: none; transform: none; transition: none; }
+}
+[data-k-motion="off"] [data-k-reveal] { filter: none !important; }
+[data-k-motion="off"] [data-k-img] img { transform: none !important; }
+
+/* a card whose border carries a light that travels round it (the colours of the theme) */
+@property --k-angle { syntax: "<angle>"; initial-value: 0deg; inherits: false; }
+@keyframes k-angle { to { --k-angle: 360deg; } }
+.k-glow::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 2px; pointer-events: none; z-index: 2;
+  background:
+    conic-gradient(from var(--k-angle), transparent 0 50%, var(--th-primary-500) 68%, var(--d-pop-300, var(--th-secondary-300)) 82%, var(--d-pop-500, var(--th-secondary-500)) 93%, transparent 100%),
+    linear-gradient(135deg, color-mix(in srgb, var(--th-primary-400) 75%, transparent), transparent 34%, transparent 66%, color-mix(in srgb, var(--d-pop-400, var(--th-secondary-400)) 80%, transparent));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude;
+  animation: k-angle 5s linear infinite; animation-delay: var(--k-glow-d, 0s);
+}
+.k-glow:hover::after, .k-glow:focus-visible::after {
+  background:
+    conic-gradient(from var(--k-angle), transparent 0 50%, #fff 72%, var(--d-pop-300, var(--th-secondary-300)) 86%, transparent 100%),
+    linear-gradient(135deg, var(--th-primary-500), var(--d-pop-400, var(--th-secondary-400)));
+}
+/* (without motion the gradient border stays, the light does not travel) */
+@media (prefers-reduced-motion: reduce) { .k-glow::after { animation: none; background: linear-gradient(135deg, color-mix(in srgb, var(--th-primary-400) 75%, transparent), transparent 34%, transparent 66%, color-mix(in srgb, var(--d-pop-400, var(--th-secondary-400)) 80%, transparent)); } }
+[data-k-motion="off"] .k-glow::after { animation: none; background: linear-gradient(135deg, color-mix(in srgb, var(--th-primary-400) 75%, transparent), transparent 34%, transparent 66%, color-mix(in srgb, var(--d-pop-400, var(--th-secondary-400)) 80%, transparent)); }
+
+/* a widget of the website's own that hangs on the left edge (an accessibility tab) stands clear of the header and of the bar of a phone */
+@media (max-width: 639px) { .k-body .ada_toggle { top: auto !important; bottom: 5.25rem !important; } }
+
+/* ---------- the motion of a design (data-k-anim on the body). "rise" is the default above. ---------- */
+/* a card whose top edge is drawn in the theme's colours under the pointer (Horizon) */
+.k-edge::after { content: ""; position: absolute; top: -1px; left: var(--k-r); right: var(--k-r); height: 3px; border-radius: 3px; background: linear-gradient(90deg, var(--color-popbtn), var(--th-primary-500)); transform: scaleX(0); transform-origin: left; transition: transform .6s cubic-bezier(.2, .8, .2, 1); pointer-events: none; }
+.k-edge:hover::after, .k-edge:focus-visible::after, .k-edge:focus-within::after { transform: scaleX(1); }
+/* unfold: what comes into view is uncovered from below, sharp, like a page being turned up; pictures open like a shutter */
+.k-js [data-k-anim="unfold"] [data-k-reveal] { opacity: 0; transform: translateY(28px); filter: none; clip-path: inset(0 0 100% 0); transition: opacity .4s ease, transform .7s cubic-bezier(.16, 1, .3, 1), clip-path .7s cubic-bezier(.16, 1, .3, 1); }
+.k-js [data-k-anim="unfold"] [data-k-reveal="left"] { transform: translateX(-34px); clip-path: inset(0 100% 0 0); }
+.k-js [data-k-anim="unfold"] [data-k-reveal="right"] { transform: translateX(34px); clip-path: inset(0 0 0 100%); }
+.k-js [data-k-anim="unfold"] [data-k-reveal="zoom"] { transform: scale(.97); clip-path: inset(8%); }
+.k-js [data-k-anim="unfold"] [data-k-reveal].k-r-in { opacity: 1; transform: none; clip-path: inset(-30%); }
+.k-js [data-k-anim="unfold"] [data-k-img] { clip-path: inset(100% 0 0 0); transition: clip-path .85s cubic-bezier(.16, 1, .3, 1); }
+.k-js [data-k-anim="unfold"] [data-k-img] img { transform: scale(1.12); transition: transform 1.2s cubic-bezier(.16, 1, .3, 1); }
+.k-js [data-k-anim="unfold"] [data-k-img].k-r-in { clip-path: inset(0); }
+.k-js [data-k-anim="unfold"] [data-k-img].k-r-in img { transform: none; }
+.k-js [data-k-anim="unfold"] [data-k-words] .k-wd > span { transition-duration: .75s; transition-timing-function: cubic-bezier(.16, 1, .3, 1); transition-delay: calc(var(--i, 0) * 40ms); }
+/* (a frame that holds a picture which is uncovered by itself is not covered as well: the picture would be held back twice) */
+.k-js [data-k-anim="unfold"] [data-k-reveal]:has([data-k-img]), .k-js [data-k-anim="bloom"] [data-k-reveal]:has([data-k-img]), .k-js [data-k-anim="slide"] [data-k-reveal]:has([data-k-img]) { opacity: 1; transform: none; filter: none; clip-path: none; }
+/* (no motion asked for, or little: nothing stays covered) */
+@media (prefers-reduced-motion: reduce) { .k-js [data-k-anim] [data-k-reveal], .k-js [data-k-anim] [data-k-img], .k-js [data-k-anim] [data-k-img] img { opacity: 1 !important; transform: none !important; filter: none !important; clip-path: none !important; transition: none !important; } }
+[data-k-motion="off"] [data-k-reveal], [data-k-motion="off"] [data-k-img], [data-k-motion="subtle"] [data-k-reveal] { clip-path: none !important; }
+[data-k-motion="off"] [data-k-img] img { transform: none !important; }
+
+/* slide (Vertex): what comes into view glides in from below or from a side; a picture is wiped clear by a block of the accent colour */
+.k-js [data-k-anim="slide"] [data-k-reveal] { opacity: 0; transform: translateY(40px); filter: none; transition: opacity .9s ease, transform 1.1s cubic-bezier(.25, .8, .25, 1); }
+.k-js [data-k-anim="slide"] [data-k-reveal="left"] { transform: translateX(-60px); }
+.k-js [data-k-anim="slide"] [data-k-reveal="right"] { transform: translateX(60px); }
+.k-js [data-k-anim="slide"] [data-k-reveal="zoom"] { transform: scale(.95); }
+.k-js [data-k-anim="slide"] [data-k-reveal].k-r-in { opacity: 1; transform: none; }
+.k-js [data-k-anim="slide"] [data-k-img] { position: relative; clip-path: none; transition: none; }
+.k-js [data-k-anim="slide"] [data-k-img]::after { content: ""; position: absolute; inset: 0; z-index: 3; background: var(--color-popbtn); transform: scaleX(1); transform-origin: right; transition: transform 1.15s cubic-bezier(.65, 0, .35, 1); pointer-events: none; }
+.k-js [data-k-anim="slide"] [data-k-img].k-r-in::after { transform: scaleX(0); }
+.k-js [data-k-anim="slide"] [data-k-img] img { transform: scale(1.1); transition: transform 1.7s cubic-bezier(.25, .8, .25, 1); }
+.k-js [data-k-anim="slide"] [data-k-img].k-r-in img { transform: none; }
+.k-js [data-k-anim="slide"] [data-k-words] .k-wd > span { transition-duration: .9s; transition-timing-function: cubic-bezier(.25, .8, .25, 1); transition-delay: calc(var(--i, 0) * 60ms); }
+
+/* bloom (Lumen): what comes into view grows out of a blur; a picture opens from its centre; soft clouds of colour drift behind a hero */
+.k-js [data-k-anim="bloom"] [data-k-reveal] { opacity: 0; transform: translateY(34px) scale(.93); filter: blur(14px); transition: opacity 1.1s ease, transform 1.25s cubic-bezier(.34, 1.3, .64, 1), filter 1.1s ease; }
+.k-js [data-k-anim="bloom"] [data-k-reveal="left"] { transform: translateX(-50px) scale(.95); }
+.k-js [data-k-anim="bloom"] [data-k-reveal="right"] { transform: translateX(50px) scale(.95); }
+.k-js [data-k-anim="bloom"] [data-k-reveal="zoom"] { transform: scale(.84); filter: blur(16px); }
+.k-js [data-k-anim="bloom"] [data-k-reveal].k-r-in { opacity: 1; transform: none; filter: none; }
+.k-js [data-k-anim="bloom"] [data-k-img] { clip-path: circle(0% at 50% 50%); transition: clip-path 1.05s cubic-bezier(.2, .8, .2, 1); }
+.k-js [data-k-anim="bloom"] [data-k-img].k-r-in { clip-path: circle(150% at 50% 50%); }
+.k-js [data-k-anim="bloom"] [data-k-img] img { transform: scale(1.1); transition: transform 1.5s cubic-bezier(.2, .8, .2, 1); }
+.k-js [data-k-anim="bloom"] [data-k-img].k-r-in img { transform: none; }
+.k-js [data-k-anim="bloom"] [data-k-words] .k-wd { overflow: visible; }
+.k-js [data-k-anim="bloom"] [data-k-words] .k-wd > span { transform: translateY(.45em) scale(.96); opacity: 0; filter: blur(10px); transition: transform 1s cubic-bezier(.2, .8, .2, 1), opacity .9s ease, filter .9s ease; transition-delay: calc(var(--i, 0) * 80ms); }
+.k-js [data-k-anim="bloom"] [data-k-words].k-r-in .k-wd > span { transform: none; opacity: 1; filter: none; }
+@keyframes k-drift { from { transform: translate(0, 0) scale(1); } to { transform: translate(60px, 40px) scale(1.12); } }
+.k-drift { animation: k-drift 16s ease-in-out infinite alternate; }
+@media (max-width: 640px) { .k-js [data-k-anim="slide"] [data-k-reveal="left"], .k-js [data-k-anim="slide"] [data-k-reveal="right"] { transform: translateY(48px); } .k-js [data-k-anim="bloom"] [data-k-reveal] { filter: none; } }
+@media (prefers-reduced-motion: reduce) { .k-js [data-k-anim] [data-k-img]::after { display: none !important; } .k-js [data-k-anim] [data-k-words] .k-wd > span { transform: none !important; opacity: 1 !important; filter: none !important; transition: none !important; } .k-drift { animation: none; } }
+[data-k-motion="off"] [data-k-img]::after { display: none !important; }
+[data-k-motion="off"] [data-k-words] .k-wd > span { transform: none !important; opacity: 1 !important; filter: none !important; }
+[data-k-motion="off"] .k-drift, [data-k-motion="subtle"] .k-drift { animation: none; }
+
+/* a header whose menu does not fit its bar: the menu and the action make way for the menu button (the toolkit measures the bar) */
+[data-k-header] [data-p="bar"] { min-width: 0; }
+[data-k-header] [data-p="brand"] { flex-shrink: 0; }
+[data-k-header][data-k-compact] [data-k-wide] { display: none !important; }
+[data-k-header][data-k-compact] [data-k-menu] { display: grid !important; }
+
+/* ---------- a design drawn at night (data-k-skin="night" on the body) ----------
+   The shades of the primary colour change places: the palest becomes the deepest and the deepest the palest, and the page, its cards, its
+   text and its lines follow. Every section therefore reads light on dark without a class of its own. The real shades stay reachable as
+   "day" (bg-day-600, text-day-300); a part that must stay a sheet of paper (the website's own form) asks for the day back with k-day. */
+:root {
+  --o-p-50: var(--th-primary-50); --o-p-100: var(--th-primary-100); --o-p-200: var(--th-primary-200); --o-p-300: var(--th-primary-300); --o-p-400: var(--th-primary-400); --o-p-500: var(--th-primary-500);
+  --o-p-600: var(--th-primary-600); --o-p-700: var(--th-primary-700); --o-p-800: var(--th-primary-800); --o-p-900: var(--th-primary-900); --o-p-950: var(--th-primary-950);
+  --o-bg: var(--th-bg); --o-bg-alt: var(--th-bg-alt); --o-card: var(--th-surface-card); --o-form: var(--th-surface-form); --o-input: var(--th-surface-input);
+  --o-text: var(--th-text-primary); --o-text-2: var(--th-text-secondary); --o-text-3: var(--th-text-muted); --o-head: var(--th-text-heading); --o-link: var(--th-text-link);
+  --o-line: var(--th-border-default); --o-line-2: var(--th-border-divider); --o-line-3: var(--th-border-strong); --o-line-in: var(--th-border-input);
+}
+.k-body[data-k-skin="night"] {
+  --n-bg: color-mix(in srgb, var(--o-p-950) 70%, #000);
+  --th-bg: var(--n-bg); --th-bg-alt: color-mix(in srgb, var(--o-p-950) 92%, #000); --th-bg-section: var(--n-bg); --th-bg-muted: color-mix(in srgb, var(--o-p-900) 45%, var(--n-bg)); --th-bg-light: var(--n-bg);
+  --th-surface-card: color-mix(in srgb, var(--o-p-900) 50%, var(--n-bg)); --th-surface-card-hover: color-mix(in srgb, var(--o-p-900) 70%, var(--n-bg)); --th-surface-elevated: color-mix(in srgb, var(--o-p-900) 62%, var(--n-bg));
+  --th-surface-form: color-mix(in srgb, var(--o-p-900) 50%, var(--n-bg)); --th-surface-input: rgb(255 255 255 / .06); --th-surface-navigation: var(--n-bg);
+  --th-text-primary: rgb(255 255 255 / .86); --th-text-secondary: rgb(255 255 255 / .7); --th-text-muted: rgb(255 255 255 / .55); --th-text-heading: #fff; --th-text-link: var(--o-p-300); --th-text-link-hover: var(--o-p-200);
+  --th-border-default: rgb(255 255 255 / .12); --th-border-divider: rgb(255 255 255 / .1); --th-border-light: rgb(255 255 255 / .08); --th-border-strong: rgb(255 255 255 / .24); --th-border-input: rgb(255 255 255 / .2);
+  --th-primary-950: color-mix(in srgb, var(--o-p-50) 45%, #fff); --th-primary-900: var(--o-p-100); --th-primary-800: var(--o-p-200); --th-primary-700: var(--o-p-300); --th-primary-600: var(--o-p-400); --th-primary-500: var(--o-p-500);
+  --th-primary-400: var(--o-p-600); --th-primary-300: var(--o-p-700); --th-primary-200: color-mix(in srgb, var(--o-p-700) 60%, var(--n-bg)); --th-primary-100: color-mix(in srgb, var(--o-p-800) 62%, var(--n-bg)); --th-primary-50: color-mix(in srgb, var(--o-p-900) 55%, var(--n-bg));
+  color-scheme: dark;
+}
+.k-body[data-k-skin="night"] .k-day {
+  --th-bg: var(--o-bg); --th-bg-alt: var(--o-bg-alt); --th-surface-card: var(--o-card); --th-surface-form: var(--o-form); --th-surface-input: var(--o-input);
+  --th-text-primary: var(--o-text); --th-text-secondary: var(--o-text-2); --th-text-muted: var(--o-text-3); --th-text-heading: var(--o-head); --th-text-link: var(--o-link); --th-text-link-hover: var(--o-link);
+  --th-border-default: var(--o-line); --th-border-divider: var(--o-line-2); --th-border-strong: var(--o-line-3); --th-border-input: var(--o-line-in);
+  --th-primary-950: var(--o-p-950); --th-primary-900: var(--o-p-900); --th-primary-800: var(--o-p-800); --th-primary-700: var(--o-p-700); --th-primary-600: var(--o-p-600); --th-primary-500: var(--o-p-500);
+  --th-primary-400: var(--o-p-400); --th-primary-300: var(--o-p-300); --th-primary-200: var(--o-p-200); --th-primary-100: var(--o-p-100); --th-primary-50: var(--o-p-50);
+  color: var(--o-text); color-scheme: light;
+}
+/* (a fill of a shade that is bright at night carries dark words, not white ones; a link in running text is a pale shade) */
+.k-body[data-k-skin="night"] .text-white:is(.bg-primary-600, .bg-primary-700, .bg-primary-800, .bg-primary-900) { color: var(--o-p-950); }
+.k-body[data-k-skin="night"] .prose-k a:not(.k-day a) { color: var(--o-p-300); text-decoration-color: color-mix(in srgb, var(--o-p-300) 45%, transparent); }
+.k-body[data-k-skin="night"] .prose-k li::marker { color: var(--o-p-400); }
+.k-body[data-k-skin="night"] .text-popbtn { color: var(--color-pop-400); }
+
+/* the words of a heading that shine: the theme's two colours run through them */
+.k-shine { background-image: linear-gradient(100deg, var(--o-p-300), var(--color-pop-300) 55%, var(--o-p-200)); background-size: 220% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent; animation: k-shine 9s ease-in-out infinite alternate; }
+@keyframes k-shine { from { background-position: 0% 0; } to { background-position: 100% 0; } }
+/* a card that is lit where the pointer is: a soft light inside it, and its edge catches the same light */
+@property --k-lit { syntax: "<number>"; initial-value: 0; inherits: true; }
+.k-spot { --k-lit: 0; transition-property: transform, border-color, background-color, box-shadow, --k-lit; background-image: radial-gradient(26rem circle at var(--mx, 50%) var(--my, 0%), color-mix(in srgb, var(--o-p-300) calc(var(--k-lit) * 16%), transparent), transparent 62%); }
+.k-spot:hover, .k-spot:focus-within { --k-lit: 1; }
+.k-spot::after { content: ""; position: absolute; inset: -1px; border-radius: inherit; padding: 1px; pointer-events: none; opacity: var(--k-lit); background: radial-gradient(18rem circle at var(--mx, 50%) var(--my, 0%), var(--o-p-300), color-mix(in srgb, var(--color-pop-400) 70%, transparent) 45%, transparent 70%); -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; }
+/* glow (Nova): what comes into view rises out of the dark with a flash of light; a picture fades up and a gleam passes over it */
+.k-js [data-k-anim="glow"] [data-k-reveal] { opacity: 0; transform: translateY(34px) scale(.975); filter: brightness(1.9) blur(8px); transition: opacity .8s ease, transform 1s cubic-bezier(.2, .8, .2, 1), filter 1s ease, --k-lit .5s ease; }
+.k-js [data-k-anim="glow"] [data-k-reveal="left"] { transform: translateX(-52px) scale(.98); }
+.k-js [data-k-anim="glow"] [data-k-reveal="right"] { transform: translateX(52px) scale(.98); }
+.k-js [data-k-anim="glow"] [data-k-reveal="zoom"] { transform: scale(.9); }
+.k-js [data-k-anim="glow"] [data-k-reveal].k-r-in { opacity: 1; transform: none; filter: none; }
+.k-js [data-k-anim="glow"] [data-k-reveal]:has([data-k-img]) { opacity: 1; transform: none; filter: none; }
+.k-js [data-k-anim="glow"] [data-k-img] { position: relative; clip-path: none; opacity: 0; transition: opacity .9s ease; }
+.k-js [data-k-anim="glow"] [data-k-img].k-r-in { opacity: 1; }
+.k-js [data-k-anim="glow"] [data-k-img] img { transform: scale(1.08); transition: transform 1.6s cubic-bezier(.2, .8, .2, 1); }
+.k-js [data-k-anim="glow"] [data-k-img].k-r-in img { transform: none; }
+.k-js [data-k-anim="glow"] [data-k-img]::after { content: ""; position: absolute; inset: 0; z-index: 3; pointer-events: none; background: linear-gradient(105deg, transparent 35%, rgb(255 255 255 / .35) 50%, transparent 65%); transform: translateX(-120%); }
+.k-js [data-k-anim="glow"] [data-k-img].k-r-in::after { transform: translateX(120%); transition: transform 1.3s cubic-bezier(.3, .6, .3, 1) .25s; }
+.k-js [data-k-anim="glow"] [data-k-words] .k-wd { overflow: visible; }
+.k-js [data-k-anim="glow"] [data-k-words] .k-wd > span { transform: translateY(.5em); opacity: 0; filter: blur(10px) brightness(2); transition: transform .9s cubic-bezier(.2, .8, .2, 1), opacity .8s ease, filter .9s ease; transition-delay: calc(var(--i, 0) * 70ms); }
+.k-js [data-k-anim="glow"] [data-k-words].k-r-in .k-wd > span { transform: none; opacity: 1; filter: none; }
+@media (max-width: 640px) { .k-js [data-k-anim="glow"] [data-k-reveal] { filter: none; } }
+@media (prefers-reduced-motion: reduce) { .k-shine { animation: none; } .k-spot { background-image: none; } .k-spot::after { display: none; } }
+[data-k-motion="off"] .k-shine { animation: none; }
+
+/* assemble (Crest): what comes into view is put in place like a tile - it drops in a little turned and settles with a small spring; a
+   picture settles inside its tile */
+.k-js [data-k-anim="assemble"] [data-k-reveal] { opacity: 0; transform: translateY(38px) rotate(-2.5deg) scale(.94); filter: none; transition: opacity .55s ease, transform .95s cubic-bezier(.34, 1.36, .64, 1); }
+.k-js [data-k-anim="assemble"] [data-k-reveal="left"] { transform: translateX(-56px) rotate(-3.5deg) scale(.95); }
+.k-js [data-k-anim="assemble"] [data-k-reveal="right"] { transform: translateX(56px) rotate(3.5deg) scale(.95); }
+.k-js [data-k-anim="assemble"] [data-k-reveal="zoom"] { transform: translateY(26px) rotate(2.5deg) scale(.86); }
+.k-js [data-k-anim="assemble"] [data-k-reveal].k-r-in { opacity: 1; transform: none; }
+.k-js [data-k-anim="assemble"] [data-k-reveal]:has([data-k-img]) { opacity: 1; transform: none; }
+.k-js [data-k-anim="assemble"] [data-k-img] { clip-path: none; opacity: 0; transform: rotate(3deg) scale(.88); transition: opacity .55s ease, transform 1s cubic-bezier(.34, 1.36, .64, 1); }
+.k-js [data-k-anim="assemble"] [data-k-img].k-r-in { opacity: 1; transform: none; }
+.k-js [data-k-anim="assemble"] [data-k-img] img { transform: scale(1.14); transition: transform 1.5s cubic-bezier(.2, .8, .2, 1); }
+.k-js [data-k-anim="assemble"] [data-k-img].k-r-in img { transform: none; }
+.k-js [data-k-anim="assemble"] [data-k-words] .k-wd > span { transform: translateY(105%) rotate(5deg); transform-origin: left bottom; transition: transform .85s cubic-bezier(.34, 1.3, .64, 1); transition-delay: calc(var(--i, 0) * 60ms); }
+.k-js [data-k-anim="assemble"] [data-k-words].k-r-in .k-wd > span { transform: none; }
+/* (what reaches the edge of the page under the curve of a hero comes in from that edge, without turning) */
+.k-js [data-k-anim="assemble"] [data-k-reveal="curve"] { transform: translateX(9%); transition: opacity .6s ease, transform 1.1s cubic-bezier(.2, .8, .2, 1); }
+@media (max-width: 1023px) { .k-js [data-k-anim="assemble"] [data-k-reveal="curve"] { transform: translateY(36px); } }
+@media (max-width: 640px) { .k-js [data-k-anim="assemble"] [data-k-reveal], .k-js [data-k-anim="assemble"] [data-k-reveal="left"], .k-js [data-k-anim="assemble"] [data-k-reveal="right"] { transform: translateY(30px) scale(.96); } }
+
+/* ---------- a ground that carries the website's pattern ----------
+   The pattern is chosen for the website (by its kind of business, or in Design settings) and named on the body (data-k-pat). It is drawn
+   in a colour of the theme through a mask, so one drawing serves every theme, and it fades out towards the words. k-pat goes on a section
+   or a band; k-pat-layer is an element laid inside a part that already uses its own ::before. */
+.k-pat { position: relative; isolation: isolate; }
+.k-pat::before, .k-pat-layer {
+  content: ""; position: absolute; inset: 0; z-index: -20; pointer-events: none; background-color: var(--k-pat-ink, var(--th-primary-500)); opacity: var(--k-pat-o, .14);
+  -webkit-mask-image: var(--k-pat-img), var(--k-pat-fade, linear-gradient(#000, #000)); mask-image: var(--k-pat-img), var(--k-pat-fade, linear-gradient(#000, #000));
+  -webkit-mask-size: var(--k-pat-size, 24px 24px), 100% 100%; mask-size: var(--k-pat-size, 24px 24px), 100% 100%;
+  -webkit-mask-repeat: repeat, no-repeat; mask-repeat: repeat, no-repeat; -webkit-mask-composite: source-in; mask-composite: intersect;
+}
+body:not([data-k-pat]) .k-pat::before, body:not([data-k-pat]) .k-pat-layer, [data-k-pat="none"] .k-pat::before, [data-k-pat="none"] .k-pat-layer { display: none; }
+/* (where the pattern is strongest: a corner, or one side) */
+.k-pat-tr { --k-pat-fade: radial-gradient(72rem 38rem at 100% 0%, #000 6%, transparent 68%); }
+.k-pat-tl { --k-pat-fade: radial-gradient(72rem 38rem at 0% 0%, #000 6%, transparent 68%); }
+.k-pat-left { --k-pat-fade: linear-gradient(90deg, #000, rgb(0 0 0 / .35) 45%, transparent 70%); }
+.k-pat-all { --k-pat-fade: linear-gradient(#000, #000); }
+[data-k-pat="waves"] { --k-pat-img: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='20'%3E%3Cpath d='M0 10c8 0 8-6 16-6s8 6 16 6 8-6 16-6 8 6 16 6' fill='none' stroke='%23000' stroke-width='1.6'/%3E%3C/svg%3E"); --k-pat-size: 64px 20px; }
+[data-k-pat="dots"] { --k-pat-img: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='22'%3E%3Ccircle cx='4' cy='4' r='2'/%3E%3C/svg%3E"); --k-pat-size: 22px 22px; }
+[data-k-pat="grid"] { --k-pat-img: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='44'%3E%3Cpath d='M0 .5H44M.5 0V44' fill='none' stroke='%23000'/%3E%3Cpath d='M22 19v6M19 22h6' fill='none' stroke='%23000' stroke-width='1.2'/%3E%3C/svg%3E"); --k-pat-size: 44px 44px; }
+[data-k-pat="hatch"] { --k-pat-img: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14'%3E%3Cpath d='M-3.5 3.5l7-7M0 14L14 0M10.5 17.5l7-7' fill='none' stroke='%23000' stroke-width='1.1'/%3E%3C/svg%3E"); --k-pat-size: 14px 14px; }
+[data-k-pat="plus"] { --k-pat-img: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='36' height='36'%3E%3Cpath d='M18 13v10M13 18h10M0-5V5M-5 0H5M36-5V5M31 0h10M0 31v10M-5 36H5M36 31v10M31 36h10' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E"); --k-pat-size: 36px 36px; }
+[data-k-pat="rings"] { --k-pat-img: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Cg fill='none' stroke='%23000' stroke-width='1.3'%3E%3Ccircle cx='0' cy='0' r='12'/%3E%3Ccircle cx='0' cy='0' r='24'/%3E%3Ccircle cx='60' cy='0' r='12'/%3E%3Ccircle cx='60' cy='0' r='24'/%3E%3Ccircle cx='0' cy='60' r='12'/%3E%3Ccircle cx='0' cy='60' r='24'/%3E%3Ccircle cx='60' cy='60' r='12'/%3E%3Ccircle cx='60' cy='60' r='24'/%3E%3C/g%3E%3C/svg%3E"); --k-pat-size: 60px 60px; }
+[data-k-pat="hex"] { --k-pat-img: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='97'%3E%3Cpath d='M28 0L56 16.2V48.5L28 64.7 0 48.5V16.2zM28 64.7V97' fill='none' stroke='%23000' stroke-width='1.2'/%3E%3C/svg%3E"); --k-pat-size: 56px 97px; }

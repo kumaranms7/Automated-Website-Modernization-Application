@@ -11,9 +11,11 @@ const KEY = { white: 'none', soft: 'alt', tint: 'tint', dark: 'dark', brand: 'br
 const OWN = ['alt', 'tint', 'dark', 'brand'].map((k) => [k, toneClass(k)]);
 const ROTATION = ['alt', 'none', 'tint', 'none'];
 const SPACE = { tight: 'py-[calc(var(--k-sec-y)*.6)]', loose: 'py-[calc(var(--k-sec-y)*1.5)]' };
-const OPEN = /^(\s*(?:<!--[\s\S]*?-->\s*)?)<section class="([^"]*)"/;
+const OPEN = /^(\s*(?:<!--[\s\S]*?-->\s*)?)<section((?:\s+[\w-]+="[^"]*")*?)\s+class="([^"]*)"/;
 
-export function applyTones(parts, entries = [], { tagAll = false, motion = null } = {}) {
+export function applyTones(parts, entries = [], { tagAll = false, motion = null, tones = null } = {}) {
+  const clsOf = (k) => tones?.[k] || toneClass(k);
+  const rotation = tones?.rotation || ROTATION;
   let prev = 'none', turn = 0;
   return toned(parts, entries).map((html, i) => {
     const e = entries[i] || {};
@@ -32,7 +34,7 @@ export function applyTones(parts, entries = [], { tagAll = false, motion = null 
     const m = OPEN.exec(html);
     const e = entries[i] || {};
     if (!m) { prev = 'own'; return html; }
-    let cls = m[2];
+    let cls = m[3];
     const own = OWN.find(([, c]) => cls.includes(c))?.[0] || null;
     let rest = cls;
     for (const [, c] of OWN) rest = rest.split(c).join(' ');
@@ -40,19 +42,21 @@ export function applyTones(parts, entries = [], { tagAll = false, motion = null 
     // a section with a background of its own that is not one of the tones (a hero, the trust row) is left alone
     if (!own && !plainBg) { prev = 'own'; return html; }
     let want = KEY[e.tone] || null;
-    if (!want) {
+    // (a section marked k-same stands on the ground of the section before it: a slim bar between two parts of the same band)
+    if (!want && /(^|\s)k-same(\s|$)/.test(cls)) want = prev === 'own' ? 'none' : prev;
+    else if (!want) {
       if (own) want = own;
       else {
-        const options = [0, 1, 2, 3].map((k) => ROTATION[(turn + k) % ROTATION.length]);
+        const options = [0, 1, 2, 3].map((k) => rotation[(turn + k) % rotation.length]);
         want = options.find((o) => o !== prev) || 'none';
         turn += 1;
       }
     }
     for (const [, c] of OWN) cls = cls.split(c).join(' ');
-    if (want !== 'none') cls = `${cls} ${toneClass(want)}`;
+    if (want !== 'none') cls = `${cls} ${clsOf(want)}`;
     if (e.space && SPACE[e.space]) cls = cls.replace('py-[var(--k-sec-y)]', SPACE[e.space]);
     prev = want;
-    return html.replace(OPEN, `${m[1]}<section class="${cls.replace(/\s+/g, ' ').trim()}"`);
+    return html.replace(OPEN, `${m[1]}<section${m[2]} class="${cls.replace(/\s+/g, ' ').trim()}"`);
     });
   }
 }

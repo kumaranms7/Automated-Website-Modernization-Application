@@ -43,10 +43,15 @@ export function kindOf(s, role) {
     form: s.form ? 'form' : '',
     small: s.small ? 'small' : '',
   };
-  const sig = Object.values(parts).join('|');
+  // (what is added to the signature only when it is there, so the kinds a website already has keep their names)
+  const heads = blocks.filter((b) => b.t === 'h').length;
+  const topics = (s.type === 'prose' || s.type === 'split') && heads >= 2 ? (heads >= 4 ? '4+ topics' : `${heads} topics`) : '';
+  const banner = s.type === 'callout' ? 'banner line' : '';
+  const more = [topics, banner].filter(Boolean);
+  const sig = Object.values(parts).join('|') + (more.length ? `|${more.join('|')}` : '');
   let h = 2166136261;
   for (let i = 0; i < sig.length; i += 1) { h ^= sig.charCodeAt(i); h = Math.imul(h, 16777619); }
-  const words = [ROLE_NAMES[role] || role, parts.head, parts.pic, parts.n && `${parts.n} items`, parts.thumbs && 'with pictures', parts.table, parts.list, parts.quote, parts.links && 'many links', parts.form].filter(Boolean);
+  const words = [banner ? 'Banner line' : ROLE_NAMES[role] || role, parts.head, parts.pic, topics, parts.n && `${parts.n} items`, parts.thumbs && 'with pictures', parts.table, parts.list, parts.quote, parts.links && 'many links', parts.form].filter(Boolean);
   return { id: `k${(h >>> 0).toString(36)}`, sig, label: words.join(' · ') };
 }
 
@@ -96,6 +101,7 @@ export function optionsFor(p, { K, design }, draw) {
   for (const k of ['home', 'inner', 'contact']) for (const b of design[k] || []) (used[`${b.type}:${b.variant}`] ||= []).push(k);
   const add = (role, s, group) => {
     for (const variant of Object.keys(LIBRARY[role] || {})) {
+      if (design.prefix ? !variant.startsWith(design.prefix) : /^[a-z]{2}-/.test(variant) && !(used[`${role}:${variant}`] || []).length) continue; // a design offers its own layouts only
       if (variant === 'wide' && !s.wide) continue;
       // a picture layout needs a picture: one in the text is taken out of it
       const shown = NEEDS_PIC.test(variant) && !s.img ? pullPicture(s) : s;

@@ -64,7 +64,8 @@ const pageSections = (v) => {
       if (ad?.role && ad.variant) { keep[key] = { added: ad, ...(variant ? { variant } : {}), ...(tone ? { tone } : {}), ...(c.hide ? { hide: true } : {}), ...(html ? { html } : {}), ...(styled ? { style } : {}) }; continue; }
       if (key[0] === 'a') continue;
       const photo = key === 'hero' && c.bg === 'photo', image = photo && typeof c.image === 'string' ? c.image.replace(/[\s"'<>]/g, '').slice(0, 600) : '';
-      if (variant || tone || c.hide || html || styled || photo) keep[key] = { ...(photo ? { bg: 'photo', ...(image ? { image } : {}) } : {}), ...(role ? { role } : {}), ...(variant ? { variant } : {}), ...(tone ? { tone } : {}), ...(c.hide ? { hide: true } : {}), ...(html ? { html } : {}), ...(styled ? { style } : {}) };
+      const plainBg = key === 'hero' && c.bg === 'plain';
+      if (variant || tone || c.hide || html || styled || photo || plainBg) keep[key] = { ...(photo ? { bg: 'photo', ...(image ? { image } : {}) } : plainBg ? { bg: 'plain' } : {}), ...(role ? { role } : {}), ...(variant ? { variant } : {}), ...(tone ? { tone } : {}), ...(c.hide ? { hide: true } : {}), ...(html ? { html } : {}), ...(styled ? { style } : {}) };
     }
     if (Object.keys(keep).length) out[String(path).slice(0, 200)] = keep;
   }
@@ -144,8 +145,38 @@ function normalizeHeroImage(h) {
 // mode: 'background' (the picture behind the heading, as the hero) or 'image' (a normal picture beside the heading)
 function normalizeBanners(b, base) {
   const out = {};
-  for (const slot of ['home', 'inner', 'contact']) { const v = b?.[slot] ?? base?.[slot]; out[slot] = { ...normalizeHeroImage(v), mode: v?.mode === 'image' ? 'image' : 'background' }; }
+  for (const slot of ['home', 'inner', 'contact']) {
+    const v = b?.[slot] ?? base?.[slot];
+    // a looping background video (assets/banners/…mp4|webm) can go with the picture, which then is its poster
+    const vs = String(v?.video?.src || '').trim();
+    const video = /^assets\/banners\/[\w.-]+\.(?:mp4|webm)$/i.test(vs) ? { src: vs } : null;
+    out[slot] = { ...normalizeHeroImage(v), mode: v?.mode === 'image' ? 'image' : 'background', ...(video ? { video } : {}) };
+  }
   return out;
+}
+// Website details and motion (Design settings): what a finished website needs besides its colours and fonts. Everything is optional:
+// an announcement over the header, the wording and target of the main call to action, a line about the business, its opening hours,
+// its social pages, how the hero looks, which colour the calls to action take, and how much the page moves.
+export const SOCIAL_KEYS = ['facebook', 'instagram', 'youtube', 'linkedin', 'x', 'tiktok', 'google', 'yelp'];
+export const WEB_OPTIONS = { overlay: ['light', 'medium', 'strong'], height: ['standard', 'tall', 'full'], pop: ['auto', 'primary', 'secondary', 'accent'], level: ['full', 'subtle', 'off'], pattern: ['auto', 'none', 'waves', 'dots', 'grid', 'hatch', 'plus', 'rings', 'hex'] };
+function normalizeWeb(input) {
+  const w = input && typeof input === 'object' ? input : {};
+  const str = (v, n) => String(v ?? '').replace(/[<>]/g, '').replace(/\s+/g, ' ').trim().slice(0, n);
+  const href = (v) => { const t = String(v ?? '').trim(); return SAFE_HREF.test(t) ? t.slice(0, 300) : ''; };
+  const bool = (v, d) => (typeof v === 'boolean' ? v : d);
+  const social = {};
+  for (const k of SOCIAL_KEYS) { const v = String(w.social?.[k] ?? '').trim(); if (/^https:\/\/[^\s"'<>]+$/i.test(v)) social[k] = v.slice(0, 300); }
+  return {
+    announce: { on: bool(w.announce?.on, true), text: str(w.announce?.text, 140), href: href(w.announce?.href) },
+    cta: { label: str(w.cta?.label, 40), href: href(w.cta?.href) },
+    tagline: str(w.tagline, 220), hours: str(w.hours, 120), social,
+    hero: { overlay: pick(w.hero?.overlay, WEB_OPTIONS.overlay, 'medium'), height: pick(w.hero?.height, WEB_OPTIONS.height, 'tall') },
+    pop: pick(w.pop, WEB_OPTIONS.pop, 'auto'),
+    pattern: pick(w.pattern, WEB_OPTIONS.pattern, 'auto'),
+    labels: bool(w.labels, true),
+    motion: { level: pick(w.motion?.level, WEB_OPTIONS.level, 'full'), zoom: bool(w.motion?.zoom, true) },
+    controls: { progress: bool(w.controls?.progress, true), top: bool(w.controls?.top, true), sticky: bool(w.controls?.sticky, true) },
+  };
 }
 function normalizeExtras(input, base) {
   const e = input || {};
@@ -157,6 +188,7 @@ function normalizeExtras(input, base) {
     headerButtons: cleanItems(e.headerButtons ?? b.headerButtons, 3),
     heroImage: normalizeHeroImage(e.heroImage ?? b.heroImage),
     banners: normalizeBanners(e.banners, b.banners),
+    web: normalizeWeb(e.web ?? b.web),
   };
 }
 

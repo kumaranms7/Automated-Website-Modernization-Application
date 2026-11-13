@@ -493,7 +493,7 @@ async function saveConfig(note) {
   SECTIONS.tokens.forEach((k) => (patch.tokens[k] = $('to_' + k).value));
   SECTIONS.layout.forEach((k) => (patch.layout[k] = $('to_' + k).value));
   patch.layout.topbar = $('to_topbar').checked;
-  patch.extras = { banners: tp.banners };
+  patch.extras = { banners: tp.banners, web: tp.web };
   tp.state = await api(`/api/clients/${slug}/template`, { method: 'PUT', body: { patch, note } });
   if (window.studioInvalidate) window.studioInvalidate();
   tp.dirty = false;
@@ -524,6 +524,7 @@ function tdSized(kind) {
 // ---------- banner images ----------
 // one picture for the top banner of the home page, one for the inner pages and one for the contact page
 const BANNERS = [['home', 'Home page'], ['inner', 'Inner pages'], ['contact', 'Contact page']];
+const keepVideo = (slot) => (tp.banners[slot]?.video ? { video: tp.banners[slot].video } : {});
 const readDataUrl = (f) => new Promise((ok, no) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = no; r.readAsDataURL(f); });
 function bannerBlock() {
   const wrap = el('div', undefined, 'banners');
@@ -552,7 +553,7 @@ function bannerBlock() {
       const f = file.files[0]; if (!f) return;
       if (f.size > 12 * 1024 * 1024) { toast('That picture is larger than 12 MB.', true); return; }
       const r = await api(`/api/clients/${slug}/template/banner`, { method: 'POST', body: { slot, name: f.name, dataUrl: await readDataUrl(f) } });
-      tp.banners[slot] = { mode: tp.banners[slot]?.mode || 'background', src: r.src, alt: tp.banners[slot]?.alt || f.name.replace(/\.[^.]+$/, '').replace(/[-_]+/g, ' ').trim().slice(0, 140) };
+      tp.banners[slot] = { ...keepVideo(slot), mode: tp.banners[slot]?.mode || 'background', src: r.src, alt: tp.banners[slot]?.alt || f.name.replace(/\.[^.]+$/, '').replace(/[-_]+/g, ' ').trim().slice(0, 140) };
       tp.dirty = true; renderBanners();
       toast(r.lowRes ? `Banner added (${r.width}px wide: a larger picture will look sharper). Press “Save as new version”.` : 'Banner added. Press “Save as new version” to keep it.');
     });
@@ -563,19 +564,92 @@ function bannerBlock() {
       const v = link.value.trim();
       if (!v) { toast('Paste the address of a picture first.', true); return; }
       const r = await api(`/api/clients/${slug}/template/banner`, { method: 'POST', body: { slot, url: v } });
-      tp.banners[slot] = { mode: tp.banners[slot]?.mode || 'background', src: r.src, alt: tp.banners[slot]?.alt || r.name.replace(/\.[^.]+$/, '').replace(/[-_]+/g, ' ').trim().slice(0, 140) };
+      tp.banners[slot] = { ...keepVideo(slot), mode: tp.banners[slot]?.mode || 'background', src: r.src, alt: tp.banners[slot]?.alt || r.name.replace(/\.[^.]+$/, '').replace(/[-_]+/g, ' ').trim().slice(0, 140) };
       tp.dirty = true; renderBanners();
       toast(r.lowRes ? `Banner added (${r.width}px wide: a larger picture will look sharper). Press “Save as new version”.` : 'Banner added from the link. Press “Save as new version” to keep it.');
     });
     use.onclick = useLink; link.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); useLink(); } };
     const linkRow = el('div', undefined, 'row'); linkRow.style.flexWrap = 'nowrap'; link.style.flex = '1 1 auto'; link.style.minWidth = '0'; linkRow.append(link, use);
     const clear = el('button', 'Remove', 'btn ghost sm2'); clear.type = 'button'; clear.hidden = !b.src;
-    clear.onclick = () => { tp.banners[slot] = { src: '', alt: '', mode: tp.banners[slot]?.mode || 'background' }; tp.dirty = true; renderBanners(); };
+    clear.onclick = () => { tp.banners[slot] = { ...keepVideo(slot), src: '', alt: '', mode: tp.banners[slot]?.mode || 'background' }; tp.dirty = true; renderBanners(); };
     const row = el('div', undefined, 'row'); row.append(pick, clear, file);
-    card.append(alt, mode, row, linkRow);
+    // a looping background video: the picture above is its poster (shown while it loads, and when the visitor prefers no motion)
+    const vbox = el('div', undefined, 'banner-video'); vbox.style.cssText = 'display:grid;gap:6px;border-top:1px dashed var(--line,#e5e7eb);padding-top:8px';
+    vbox.append(el('b', 'Background video'), el('small', b.video?.src ? `Video in use: ${b.video.src.split('/').pop()}. It plays muted and looping behind the heading.` : 'Optional. An MP4 or WebM file up to 25 MB, 10 to 15 seconds is plenty. It plays muted and looping behind the heading.', 'hint'));
+    if (b.video?.src) { const pv = document.createElement('video'); pv.src = `/original/${slug}/${b.video.src}`; pv.muted = true; pv.loop = true; pv.autoplay = true; pv.playsInline = true; pv.style.cssText = 'width:100%;aspect-ratio:16/5;object-fit:cover;border-radius:.4rem;background:#000'; vbox.append(pv); }
+    const vfile = document.createElement('input'); vfile.type = 'file'; vfile.accept = 'video/mp4,video/webm'; vfile.hidden = true;
+    const vpick = el('button', b.video?.src ? 'Change video' : 'Choose video', 'btn ghost sm2'); vpick.type = 'button'; vpick.onclick = () => vfile.click();
+    const setVideo = (r) => { tp.banners[slot] = { ...tp.banners[slot], mode: 'background', video: { src: r.src } }; tp.dirty = true; renderBanners(); toast('Video added. Press “Save as new version” to keep it.'); };
+    vfile.onchange = () => busy(vpick, async () => {
+      const f = vfile.files[0]; if (!f) return;
+      if (f.size > 25 * 1024 * 1024) { toast('That video is larger than 25 MB.', true); return; }
+      setVideo(await api(`/api/clients/${slug}/template/banner-video`, { method: 'POST', body: { slot, name: f.name, dataUrl: await readDataUrl(f) } }));
+    });
+    const vlink = document.createElement('input'); vlink.type = 'url'; vlink.placeholder = 'or paste a video file link (https://….mp4)'; vlink.setAttribute('aria-label', `${label} banner video link`);
+    const vuse = el('button', 'Use link', 'btn ghost sm2'); vuse.type = 'button';
+    const useVideoLink = () => busy(vuse, async () => { const v = vlink.value.trim(); if (!v) { toast('Paste the address of a video file first.', true); return; } setVideo(await api(`/api/clients/${slug}/template/banner-video`, { method: 'POST', body: { slot, url: v } })); });
+    vuse.onclick = useVideoLink; vlink.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); useVideoLink(); } };
+    const vlinkRow = el('div', undefined, 'row'); vlinkRow.style.flexWrap = 'nowrap'; vlink.style.flex = '1 1 auto'; vlink.style.minWidth = '0'; vlinkRow.append(vlink, vuse);
+    const vclear = el('button', 'Remove video', 'btn ghost sm2'); vclear.type = 'button'; vclear.hidden = !b.video?.src;
+    vclear.onclick = () => { const { video, ...rest } = tp.banners[slot] || {}; tp.banners[slot] = rest; tp.dirty = true; renderBanners(); };
+    const vrow = el('div', undefined, 'row'); vrow.append(vpick, vclear, vfile);
+    vbox.append(vrow, vlinkRow);
+    card.append(alt, mode, row, linkRow, vbox);
     list.append(card);
   }
   wrap.append(list);
+  return wrap;
+}
+// ---------- website details and motion ----------
+// what a finished website needs besides its colours and fonts: the announcement, the main call to action, the business line, the hours,
+// the social pages, the look of the hero, the colour of the calls to action and how much the page moves
+const WEB_SOCIAL = [['facebook', 'Facebook'], ['instagram', 'Instagram'], ['youtube', 'YouTube'], ['linkedin', 'LinkedIn'], ['x', 'X'], ['tiktok', 'TikTok'], ['google', 'Google Business'], ['yelp', 'Yelp']];
+function webBlock() {
+  const w = tp.web || (tp.web = {});
+  for (const k of ['announce', 'cta', 'social', 'hero', 'motion', 'controls']) w[k] = w[k] || {};
+  const wrap = el('div', undefined, 'webset');
+  wrap.style.marginTop = '22px';
+  wrap.append(el('h3', 'Website details and motion'), el('small', 'What a finished website needs besides its colours and fonts. Everything here is optional: what you leave empty is read from the old website.', 'hint'));
+  const grid = el('div'); grid.style.cssText = 'display:grid;gap:14px;margin-top:10px;grid-template-columns:repeat(auto-fit,minmax(19rem,1fr))';
+  const dirty = () => { tp.dirty = true; };
+  const card = (title, hint) => { const c = el('div'); c.style.cssText = 'border:1px solid var(--line,#e5e7eb);border-radius:.5rem;padding:12px;display:grid;gap:8px;align-content:start;background:var(--surface,#fff)'; c.append(el('b', title)); if (hint) c.append(el('small', hint, 'hint')); grid.append(c); return c; };
+  const text = (c, label, get, set, { max = 140, ph = '', type = 'text' } = {}) => { const l = el('label', label); l.style.cssText = 'display:grid;gap:4px;font-size:12px;font-weight:600'; const i = document.createElement('input'); i.type = type; i.maxLength = max; i.placeholder = ph; i.value = get() || ''; i.oninput = () => { set(i.value); dirty(); }; l.append(i); c.append(l); return i; };
+  const select = (c, label, options, get, set) => { const l = el('label', label); l.style.cssText = 'display:grid;gap:4px;font-size:12px;font-weight:600'; const s = document.createElement('select'); options.forEach(([v, t]) => s.add(new Option(t, v))); s.value = get(); s.onchange = () => { set(s.value); dirty(); }; l.append(s); c.append(l); return s; };
+  const check = (c, label, get, set) => { const l = el('label', undefined, 'chk'); const i = document.createElement('input'); i.type = 'checkbox'; i.checked = get(); i.onchange = () => { set(i.checked); dirty(); }; l.append(i, el('span', label)); c.append(l); return i; };
+
+  const a = card('Announcement bar', 'A short line over the header, for an offer or a notice. Empty: the address or the opening hours are shown there.');
+  check(a, 'Show the bar', () => w.announce.on !== false, (v) => { w.announce.on = v; });
+  text(a, 'Text', () => w.announce.text, (v) => { w.announce.text = v; }, { ph: 'Same-day service, 7 days a week' });
+  text(a, 'Link (optional)', () => w.announce.href, (v) => { w.announce.href = v; }, { max: 300, ph: '/schedule-now.html or https://…' });
+
+  const c = card('Main call to action', 'The button in the header and the closing sections. Empty: the wording and page of the old website.');
+  text(c, 'Button text', () => w.cta.label, (v) => { w.cta.label = v; }, { max: 40, ph: 'Get a free quote' });
+  text(c, 'Button link', () => w.cta.href, (v) => { w.cta.href = v; }, { max: 300, ph: '/contact.html, #quote or tel:+1…' });
+  select(c, 'Colour of the calls to action', [['auto', 'Automatic (the livelier of secondary and accent)'], ['secondary', 'Secondary colour'], ['accent', 'Accent colour'], ['primary', 'Primary colour']], () => w.pop || 'auto', (v) => { w.pop = v; });
+
+  const b = card('Business details', 'Shown in the footer and over the header.');
+  text(b, 'A line about the business', () => w.tagline, (v) => { w.tagline = v; }, { max: 220, ph: 'Licensed and insured plumbers serving Broward since 1998' });
+  text(b, 'Opening hours', () => w.hours, (v) => { w.hours = v; }, { max: 120, ph: 'Mon to Fri 8:00 to 17:00' });
+
+  const s = card('Social pages', 'Full addresses (https://…). Only the ones you fill in are shown in the footer.');
+  const sg = el('div'); sg.style.cssText = 'display:grid;gap:8px;grid-template-columns:1fr 1fr';
+  WEB_SOCIAL.forEach(([k, label]) => text(sg, label, () => w.social[k], (v) => { if (v.trim()) w.social[k] = v.trim(); else delete w.social[k]; }, { max: 300, ph: 'https://', type: 'url' }));
+  s.append(sg);
+
+  const h = card('Hero', 'The top of the home page and of the inner pages. Its picture or video is set in Banner images above.');
+  select(h, 'Veil over the picture or video', [['light', 'Light (the picture shows more)'], ['medium', 'Medium'], ['strong', 'Strong (the text reads best)']], () => w.hero.overlay || 'medium', (v) => { w.hero.overlay = v; });
+  select(h, 'Height of the home hero', [['standard', 'Standard'], ['tall', 'Tall'], ['full', 'Full screen']], () => w.hero.height || 'tall', (v) => { w.hero.height = v; });
+  check(h, 'Small labels over sections (Reviews, Questions, Service areas…)', () => w.labels !== false, (v) => { w.labels = v; });
+  select(h, 'Background pattern of the banner and the bands (Crest design)', [['auto', 'Automatic (suits the kind of business)'], ['waves', 'Waves'], ['dots', 'Dots'], ['grid', 'Grid'], ['hatch', 'Fine diagonal lines'], ['plus', 'Crosses'], ['rings', 'Rings'], ['hex', 'Honeycomb'], ['none', 'No pattern']], () => w.pattern || 'auto', (v) => { w.pattern = v; });
+
+  const m = card('Motion', 'Headings that rise word by word, pictures that are uncovered, numbers that count up. Visitors who ask their device for less motion always get a still page.');
+  select(m, 'How much the page moves', [['full', 'Full'], ['subtle', 'Subtle (fades only)'], ['off', 'Off']], () => w.motion.level || 'full', (v) => { w.motion.level = v; });
+  check(m, 'Slow zoom on the hero picture', () => w.motion.zoom !== false, (v) => { w.motion.zoom = v; });
+  check(m, 'Reading progress bar at the top', () => w.controls.progress !== false, (v) => { w.controls.progress = v; });
+  check(m, 'Back-to-top button', () => w.controls.top !== false, (v) => { w.controls.top = v; });
+  check(m, 'Call-to-action button that appears while scrolling', () => w.controls.sticky !== false, (v) => { w.controls.sticky = v; });
+
+  wrap.append(grid);
   return wrap;
 }
 function renderBanners() { const old = document.querySelector('#td-controls .banners'); if (old) old.replaceWith(bannerBlock()); lpSync(); }
@@ -583,6 +657,7 @@ function renderBanners() { const old = document.querySelector('#td-controls .ban
 function renderControls() {
   const { spec, options, fonts } = tp.state;
   tp.banners = JSON.parse(JSON.stringify(spec.extras?.banners || {}));
+  tp.web = JSON.parse(JSON.stringify(spec.extras?.web || {}));
   const box = $('td-controls');
   box.innerHTML = '';
   box.append(themeMgrHost());
@@ -615,6 +690,7 @@ function renderControls() {
   grid.append(tf);
   box.append(grid);
   box.append(bannerBlock());
+  box.append(webBlock());
   const live = $('td-live');
   if (!live.firstChild) live.innerHTML = lpHtml();
   tp.dirty = false;

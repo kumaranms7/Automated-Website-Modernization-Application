@@ -42,7 +42,9 @@ export function previewHandler(mode) {
         const prefix = mode === 'final' ? `/final/${slug}/${outName}/` : `/${mode}/${slug}/`;
         const host = escapeRe(client.host);
         const html = (isPhp && fromSource && client.php ? await readSource(client, rel) : await readHtml(full))
-          .replace(/(\b(?:href|src|action)=["'])\/(?!\/)/gi, `$1${prefix}`)
+          .replace(/(\b(?:href|src|action|poster)=["'])\/(?!\/)/gi, `$1${prefix}`)
+          // (the sizes of a responsive picture are addresses as well)
+          .replace(/\bsrcset=(["'])([^"']*)\1/gi, (m, q, v) => `srcset=${q}${v.replace(/(^|,\s*)\/(?!\/)/g, `$1${prefix}`)}${q}`)
           .replace(new RegExp(`https?://(?:www\\.)?${host}/?`, 'gi'), prefix);
         return res.type('html').send(html);
       }

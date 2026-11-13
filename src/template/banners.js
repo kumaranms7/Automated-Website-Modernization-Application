@@ -79,9 +79,54 @@ export async function saveBannerFromUrl(slug, slot, link, { fetcher = fetch } = 
   return storeBanner(slug, slot, Buffer.concat(chunks), decodeURIComponent(u.pathname.split('/').pop() || 'banner').slice(0, 80));
 }
 
+// ---------- a background video ----------
+// A short looping clip behind the heading of a banner. It is checked by its first bytes, kept with the template like a picture (an uploaded
+// file, or one downloaded once from a public link) and copied to the built site as assets/banners/<file>.
+const VIDEO_MAX = 25 * 1024 * 1024;
+export const isBannerVideo = (src) => /^assets\/banners\/[\w.-]+\.(?:mp4|webm)$/i.test(String(src || ''));
+const videoKind = (buf) => (buf.length > 12 && buf.subarray(4, 8).toString('latin1') === 'ftyp' ? 'mp4' : buf.length > 4 && buf[0] === 0x1a && buf[1] === 0x45 && buf[2] === 0xdf && buf[3] === 0xa3 ? 'webm' : '');
+
+async function storeVideo(slug, slot, input, name) {
+  if (input.length > VIDEO_MAX) throw new Error('That video is larger than 25 MB. Use a shorter or more compressed clip (10 to 15 seconds is plenty).');
+  const kind = videoKind(input);
+  if (!kind) throw new Error('Choose an MP4 or WebM video.');
+  const file = `${slot}-v${crypto.createHash('sha1').update(input).digest('hex').slice(0, 8)}.${kind}`;
+  await fs.mkdir(bannerFolder(slug), { recursive: true });
+  await fs.writeFile(path.join(bannerFolder(slug), file), input);
+  return { src: `${BANNER_DIR}/${file}`, bytes: input.length, type: kind, name: String(name).slice(0, 80) };
+}
+
+export async function saveBannerVideo(slug, slot, { dataUrl, name = '' }) {
+  if (!SLOTS.includes(slot)) throw new Error('Choose home, inner or contact.');
+  const m = /^data:video\/(mp4|webm|quicktime)[^,]*;base64,([A-Za-z0-9+/=]+)$/i.exec(String(dataUrl || ''));
+  if (!m) throw new Error('Choose an MP4 or WebM video.');
+  return storeVideo(slug, slot, Buffer.from(m[2], 'base64'), name);
+}
+
+export async function saveBannerVideoFromUrl(slug, slot, link, { fetcher = fetch } = {}) {
+  if (!SLOTS.includes(slot)) throw new Error('Choose home, inner or contact.');
+  let u;
+  try { u = new URL(String(link || '').trim()); } catch { throw new Error('Enter the full address of the video file, starting with https://'); }
+  let res;
+  for (let hop = 0; hop < 4; hop += 1) {
+    await assertPublic(u);
+    try { res = await fetcher(u.href, { redirect: 'manual', signal: AbortSignal.timeout(60000), headers: { accept: 'video/mp4,video/webm,*/*;q=0.5', 'user-agent': 'Mozilla/5.0 (compatible; SiteModernizer)' } }); } catch (e) { throw new Error(`The video could not be downloaded (${e.message}).`); }
+    if (res.status >= 300 && res.status < 400 && res.headers.get('location')) { u = new URL(res.headers.get('location'), u); continue; }
+    break;
+  }
+  if (res.status >= 300 && res.status < 400) throw new Error('The address redirects too many times.');
+  if (!res.ok) throw new Error(`The video could not be downloaded (the website answered ${res.status}).`);
+  const type = (res.headers.get('content-type') || '').toLowerCase();
+  if (type.startsWith('text/html')) throw new Error('That address is a web page, not a video file. A YouTube or Vimeo page cannot be used as a background: use the address of an MP4 or WebM file.');
+  if (Number(res.headers.get('content-length') || 0) > VIDEO_MAX) throw new Error('That video is larger than 25 MB. Use a shorter or more compressed clip.');
+  const chunks = []; let size = 0;
+  for await (const c of res.body) { size += c.length; if (size > VIDEO_MAX) throw new Error('That video is larger than 25 MB. Use a shorter or more compressed clip.'); chunks.push(c); }
+  return storeVideo(slug, slot, Buffer.concat(chunks), decodeURIComponent(u.pathname.split('/').pop() || 'video').slice(0, 80));
+}
+
 // the published copy: every picture a design uses, into the built site
 export async function copyBanners(slug, spec, buildDir) {
-  const used = new Set(SLOTS.map((s) => spec.extras?.banners?.[s]?.src).filter(isBannerSrc).map((s) => path.basename(s)));
+  const used = new Set([...SLOTS.map((s) => spec.extras?.banners?.[s]?.src).filter(isBannerSrc), ...SLOTS.map((s) => spec.extras?.banners?.[s]?.video?.src).filter(isBannerVideo)].map((s) => path.basename(s)));
   if (!used.size) return 0;
   await fs.mkdir(path.join(buildDir, BANNER_DIR), { recursive: true });
   let n = 0;

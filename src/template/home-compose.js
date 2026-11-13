@@ -5,10 +5,12 @@ import { plain } from '../util/html.js';
 // FAQ, areas ...). Two sources: the structured extraction of the pilot site's home page, or - for any other site -
 // a classification of the generic content blocks by their shape.
 
+const esc = (t) => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 const wrap = (htmls) => htmls.map((html) => ({ t: 'html', html: /^<(p|ul|ol|table|blockquote)\b/i.test(html) ? html : `<p>${html}</p>` }));
 
-export function composeHome(model, site) {
-  return model.home ? fromRecipe(model, site) : fromBlocks(model, site);
+// opts.keepPictures: the page's first picture stays where it is in the text (a design that keeps the page's order decides itself what the hero shows)
+export function composeHome(model, site, opts = {}) {
+  return model.home ? fromRecipe(model, site) : fromBlocks(model, opts);
 }
 
 // ---------- the pilot site's recipe ----------
@@ -45,14 +47,20 @@ function listItems(html) {
 }
 const isList = (b) => b.t === 'html' && /^<(ul|ol)\b/i.test(b.html);
 
-function groupBlocks(blocks) {
+// opts.bands: the old page's own rows are kept apart (what stood beside the form ends where that row ended; a banner line is a section of its own)
+function groupBlocks(blocks, opts = {}) {
   const groups = [];
   let cur = null;
   const flush = () => { if (cur && (cur.title || cur.blocks.length)) groups.push(cur); cur = null; };
+  const STRUCT = ['cardgrid', 'reviews', 'faq', 'cards', 'links', 'contact'];
+  const long = (g) => g && (g.blocks.filter((x) => x.t === 'h').length > 1 || g.blocks.filter((x) => x.t === 'html').reduce((n, x) => n + plain(x.html).length, 0) > 600 || g.blocks.some((x) => STRUCT.includes(x.t) || x.t === 'img'));
   for (const b of blocks) {
     if (b.t === 'break') { flush(); continue; }
-    if (b.t === 'h' && b.level <= 2) { if (cur && (cur.blocks.length || cur.title)) flush(); cur = { title: b.text, blocks: [] }; continue; }
-    (cur ||= { title: '', blocks: [] }).blocks.push(b);
+    if (opts.bands && cur && cur.zone && b.zone && b.zone !== cur.zone) flush();
+    if (opts.bands && b.t === 'callout') { flush(); groups.push({ title: '', blocks: [b], zone: b.zone || '' }); continue; }
+    if (STRUCT.includes(b.t) && long(cur)) { flush(); cur = { title: '', blocks: [b], zone: b.zone || '' }; flush(); continue; }
+    if (b.t === 'h' && b.level <= 2) { if (cur && (cur.blocks.length || cur.title)) flush(); cur = { title: b.text, blocks: [], zone: b.zone || '' }; continue; }
+    (cur ||= { title: '', blocks: [], zone: b.zone || '' }).blocks.push(b);
   }
   flush();
   return groups;
@@ -61,37 +69,50 @@ function groupBlocks(blocks) {
 function classify(g, ctx) {
   const bl = g.blocks;
   const has = (t) => bl.find((b) => b.t === t);
+  // (a group without a heading of the page's first two levels is named by its own first heading)
+  const named = g.title || bl.find((b) => b.t === 'h')?.text || '';
   const rest = (skip) => bl.filter((b) => !skip.includes(b));
-  if (has('faq')) return { type: 'faq', title: g.title, intro: rest([has('faq')]).filter((b) => b.t === 'html'), items: has('faq').items };
-  if (has('reviews')) return { type: 'reviews', title: g.title, items: has('reviews').items };
-  if (has('cardgrid')) return { type: 'cardgrid', title: g.title, intro: rest([has('cardgrid')]).filter((b) => b.t === 'html'), items: has('cardgrid').items };
-  if (has('cards')) return { type: 'iconcards', title: has('cards').title || g.title, items: has('cards').items };
+  // (a group whose heading is one of its own blocks: that heading is its title, the other blocks are its content)
+  const heads = bl.filter((b) => b.t === 'h');
+  const callout = has('callout');
+  if (callout && bl.length === 1) return { type: 'callout', title: callout.title || '', text: callout.text || '' };
+  if (has('faq')) return { type: 'faq', title: named, intro: rest([has('faq')]).filter((b) => b.t === 'html'), items: has('faq').items };
+  if (has('reviews')) return { type: 'reviews', title: named, items: has('reviews').items };
+  if (has('cardgrid')) return { type: 'cardgrid', title: named, intro: rest([has('cardgrid')]).filter((b) => b.t === 'html'), items: has('cardgrid').items };
+  if (has('cards')) return { type: 'iconcards', title: has('cards').title || named, items: has('cards').items };
   if (has('cta')) return { type: 'cta', ...has('cta') };
+  if (has('contact')) return { type: 'contact', title: g.title || bl.find((b) => b.t === 'h')?.text || '', intro: bl.filter((b) => b.t === 'html'), items: has('contact').items };
   const links = has('links');
-  if (links) return { type: 'areas', groups: [{ title: g.title, links: links.items }] };
+  if (links) return { type: 'areas', groups: [{ title: named, links: links.items }] };
   const lists = bl.filter(isList);
   const anchors = lists.find((b) => (b.html.match(/<li>\s*<a /g) || []).length >= 10);
-  if (anchors) { const $ = cheerio.load(anchors.html); return { type: 'areas', groups: [{ title: g.title, links: $('a').map((_, a) => ({ href: $(a).attr('href'), text: plain($(a).text()) })).get() }] }; }
+  if (anchors) { const $ = cheerio.load(anchors.html); return { type: 'areas', groups: [{ title: named, links: $('a').map((_, a) => ({ href: $(a).attr('href'), text: plain($(a).text()) })).get() }] }; }
 
   // numeric highlights: value followed by a label, three or more times
   const texts = bl.filter((b) => b.t === 'html').map((b) => plain(b.html));
   const pairs = [];
   for (let i = 0; i < texts.length - 1; i++) if (isStatValue(texts[i]) && texts[i + 1] && texts[i + 1].length < 60) { pairs.push({ value: texts[i], label: texts[i + 1] }); i++; }
-  if (pairs.length >= 3 && texts.length <= pairs.length * 2 + 1) return { type: 'stats', items: pairs, title: g.title };
+  if (pairs.length >= 3 && texts.length <= pairs.length * 2 + 1) return { type: 'stats', items: pairs, title: named };
 
   const imgs = bl.filter((b) => b.t === 'img');
   const paras = bl.filter((b) => b.t === 'html' && !isList(b));
-  if (lists.length === 1 && paras.length <= 3 && !imgs.length) {
+  if (lists.length === 1 && paras.length <= 3 && !imgs.length && heads.length <= (g.title ? 0 : 1) && !(ctx.bands && /<a\b/i.test(lists[0].html))) {
     const items = listItems(lists[0].html);
-    if (items.length >= 4 && items.length <= 12 && items.every((i) => i.length <= 110)) return { type: 'features', title: g.title, intro: paras, items };
+    if (items.length >= 4 && items.length <= 12 && items.every((i) => i.length <= 110)) {
+      // (the text after the list is kept after it by a design that draws the section itself)
+      const at = bl.indexOf(lists[0]);
+      return ctx.bands ? { type: 'features', title: named, intro: paras.filter((b) => bl.indexOf(b) < at), after: paras.filter((b) => bl.indexOf(b) > at), items } : { type: 'features', title: named, intro: paras, items };
+    }
   }
-  if (imgs.length === 1 && paras.length >= 1 && ctx.canSplit) return { type: 'split', title: g.title, img: imgs[0].src, imgAlt: imgs[0].alt, imgBlock: imgs[0], blocks: bl.filter((b) => b !== imgs[0]) };
+  // (where the picture stood in the text: after it, or before it)
+  if (imgs.length === 1 && paras.length >= 1 && ctx.canSplit) return { type: 'split', title: g.title, img: imgs[0].src, imgAlt: imgs[0].alt, imgBlock: imgs[0], imgAfter: bl.indexOf(imgs[0]) > bl.findLastIndex((b) => b.t === 'html'), blocks: bl.filter((b) => b !== imgs[0]) };
   if (has('form')) return { type: 'prose', title: g.title, blocks: bl.filter((b) => b.t !== 'form'), form: true };
   return { type: 'prose', title: g.title, blocks: bl };
 }
 
-function fromBlocks(model) {
-  const all = model.blocks.map((b) => ({ ...b }));
+function fromBlocks(model, opts = {}) {
+  // (a banner line of the old page is text like any other for a design that has no section for it)
+  const all = model.blocks.map((b) => (b.t === 'callout' && !opts.bands ? { t: 'html', html: `<p><strong>${esc(b.title || '')}</strong>${b.text ? ` ${esc(b.text)}` : ''}</p>`, zone: b.zone } : { ...b }));
   const content = all.filter((b) => b.t !== 'break');
   const firstHead = content.findIndex((b) => b.t === 'h');
   const lead = content.findIndex((b) => b.t === 'html' && /^<p\b/i.test(b.html) && plain(b.html).length <= 320);
@@ -104,11 +125,14 @@ function fromBlocks(model) {
     if (next && isList(next)) { const items = listItems(next.html); if (items.length >= 2 && items.length <= 5 && items.every((i) => i.length <= 90)) { hero.bullets = items; taken.add(next); } }
   }
   const img = content.findIndex((b) => b.t === 'img');
-  if (img >= 0 && (firstHead === -1 || img < firstHead || firstHead < 2)) { hero.image = content[img]; taken.add(content[img]); }
-  const groups = groupBlocks(all.filter((b) => !taken.has(b)));
-  const ctx = { canSplit: true };
+  if (!opts.keepPictures && img >= 0 && (firstHead === -1 || img < firstHead || firstHead < 2)) { hero.image = content[img]; taken.add(content[img]); }
+  // (a paragraph that holds nothing but a mark of the old design - the plus or the minus of a folding row, a bullet - is not content)
+  const mark = (b) => opts.bands && b.t === 'html' && !/<(img|iframe|video|svg|table|input|button|form)\b/i.test(b.html) && /^[\s\-+–—•·×▾▸›»|]*$/.test(plain(b.html));
+  const groups = groupBlocks(all.filter((b) => !taken.has(b) && !mark(b)), opts);
+  const ctx = { canSplit: true, bands: Boolean(opts.bands) };
   let n = 0;
-  const sections = groups.map((g) => { const s = classify(g, ctx); if (s.type === 'split') s.flip = n++ % 2 === 1; return s; });
+  // (lead: the section stood beside the page's form)
+  const sections = groups.map((g) => { const s = classify(g, ctx); if (s.type === 'split') s.flip = n++ % 2 === 1; if (opts.bands && g.zone === 'lead') s.lead = true; return s; });
   return { hero, sections };
 }
 

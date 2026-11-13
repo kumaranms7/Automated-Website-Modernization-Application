@@ -3,9 +3,13 @@
 // content supplies (services, reviews, faq...); the same blueprint is filled with placeholder content for approval and with the
 // website's own content afterwards.
 
+import { NEW_DESIGNS } from './designs/index.js';
+
 const R = (type, variant, extra = {}) => ({ type, variant, ...extra });
 
+// the designs with layouts of their own come first (src/kit/designs), then the first six
 export const DESIGNS = {
+  ...NEW_DESIGNS,
   aurora: {
     id: 'aurora', name: 'Aurora', badge: 'Glass & gradient', blurb: 'Soft aurora gradients, glass cards and a floating pill header. Friendly, premium and very 2026.',
     fonts: { heading: 'Manrope', body: 'Inter' }, vars: { '--k-r': '1.5rem', '--k-r-btn': '999px', '--k-h-weight': '800', '--k-h-track': '-.035em' },
@@ -57,4 +61,6 @@ export const DESIGNS = {
 };
 
 export const DESIGN_IDS = Object.keys(DESIGNS);
+// the designs a website can choose today. The others are kept only so that a template saved with one of them still draws.
+export const OFFERED_IDS = DESIGN_IDS.filter((id) => DESIGNS[id].offered);
 export const designById = (id) => DESIGNS[id] || DESIGNS.aurora;

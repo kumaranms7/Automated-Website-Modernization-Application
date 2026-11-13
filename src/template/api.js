@@ -3,7 +3,7 @@ import { loadSiteColors } from './site-colors.js';
 import { clientDir, readJson, writeJson } from '../config.js';
 import { buildClient } from '../build/build.js';
 import { collectSections, setKindPool } from '../kit/fit.js';
-import { innerKinds } from '../kit/kinds.js';
+import { innerKinds, rebase } from '../kit/kinds.js';
 import { OPTIONS, FONT_CATALOG } from './spec.js';
 import { loadActive, saveDraft, listVersions, finalise, reopen, isFinal } from './store.js';
 import { suggestPages } from './suggest.js';
@@ -61,7 +61,7 @@ export async function previewTemplate(slug, opts = {}) {
   if (!only.length) throw new Error('No pages selected for the preview');
   // the template's inner page shows every kind of section found on the website's inner pages, not only those of the page it is designed on
   let kinds = null;
-  if (spec.kit?.design && pages.inner) { try { kinds = await innerKinds(slug, { ...spec, pages: { ...spec.pages, home: pages.home, contact: pages.contact } }); setKindPool({ page: pages.inner, kinds: kinds.kinds.map((k) => ({ id: k.id, label: k.label, role: k.role, count: k.count, pages: k.pages.slice(0, 8), s: k.s })) }); } catch { setKindPool(null); } }
+  if (spec.kit?.design && pages.inner) { try { kinds = await innerKinds(slug, { ...spec, pages: { ...spec.pages, home: pages.home, contact: pages.contact } }); setKindPool({ page: pages.inner, kinds: kinds.kinds.map((k) => ({ id: k.id, label: k.label, role: k.role, count: k.count, pages: k.pages.slice(0, 8), s: rebase(k.s, k.example, pages.inner) })) }); } catch { setKindPool(null); } }
   const sections = collectSections(true);
   let report;
   try { report = await buildClient(slug, { only, content: 'none', spec, outName: 'template/preview' }); } finally { collectSections(false); setKindPool(null); }

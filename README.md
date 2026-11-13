@@ -30,9 +30,21 @@ The portal is a seven-step flow, one tab each:
 
 ## Template design
 
-The design kit is written only with Tailwind classes. It ships several designs (aurora, bento, midnight, editorial, clarity and local), each with its own layouts, fonts and shapes drawn in the website's own colours.
+The design kit is written only with Tailwind classes. It offers six designs. Every one of them keeps the sections of a page in the page's own order, with the pictures and icons of each section in that section, and follows the website's theme colours; they differ in layout, typography and motion:
 
-- **Modern designs**: browse the designs and a section library with every kind of section in every layout.
+| Design | Look | Motion |
+|---|---|---|
+| **Signature** | Deep shades of the brand colour, pale bands in turn, glass over photographs, cards with a gradient border whose light travels round them | Sections rise out of a blur, headings rise word by word |
+| **Horizon** | A serif for the headings, a warm pale ground, hairlines instead of boxes, the hero picture under an arch, a light footer | Sections are uncovered like a page being turned up |
+| **Vertex** | Condensed capitals, square corners, solid blocks of colour, headings set on the pictures of the cards, figures on a dark band | Sections slide in, pictures are wiped clear by a block of colour |
+| **Lumen** | Round and light: a header that floats as a pill, tinted panels set into the page, lists as chips, figures on glass | Sections bloom out of a blur, pictures open from their centre |
+| **Nova** | Dark and luminous: the whole page in the deepest shade of the brand colour, glass cards with a light that follows the pointer, the hero picture or video in a leaning glass frame, the form on a sheet of white paper | Sections rise out of the dark with a flash, a gleam passes over pictures |
+| **Crest** | An open hero on a ground that carries a pattern chosen for the kind of business (waves for a plumber, the grid of a plan for a builder); its picture or video reaches the edge of the page under a wide curve; full-width bands, white and pale with the pattern in turn; cards, lists and figures are tiles, and accent words sit on tiles of their own | Tiles drop into place with a small spring, the hero picture comes in from its edge |
+
+How a page is read is the same for all six (`src/kit/designs/shared.js` and `base.js`): the rows of the old page stay separate sections, the text that stood beside the form keeps the form beside it, a heading above a list stays its heading, several headings in one row become topics side by side, and a long text beside a picture goes on under both. The header and the footer use the website's own links, credentials, seal, social pages and legal pages. A contact page shows the contact details beside the form, then the website's questions, its closing call and the map. All motion stops for visitors who prefer less of it.
+
+- **Configuration**: colours and fonts, banner pictures or a looping background video, and the website details a finished site needs: an announcement bar, the main call to action, a business line, opening hours, social pages, how the hero looks, the background pattern of the designs that carry one (automatic by the kind of business, or chosen from waves, dots, grid, fine lines, crosses, rings and honeycomb) and how much the page moves.
+- **Modern designs**: preview each design with placeholder content, and open its section library. The inner template shows one example of every kind of section found on the website's inner pages.
 - **Preview & refine**: the redesigned pages beside the originals, with a **Customize sections** panel that floats over the preview like a chat window.
 - **Customize sections**:
   - Choose another layout for a section, or another kind of section the content can become.

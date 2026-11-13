@@ -32,7 +32,7 @@ import { previewConversion, previewPatterns, previewPattern } from '../template/
 import { buildPatterns, resetPattern, patternSummary, describePage, refinePattern, undoRefine, chooseDesign } from '../template/own-patterns.js';
 const exState = async (slug) => ({ ...(await ownState(slug)), patterns: await patternSummary(slug) });
 import { refsDir } from '../template/store.js';
-import { saveBanner, saveBannerFromUrl } from '../template/banners.js';
+import { saveBanner, saveBannerFromUrl, saveBannerVideo, saveBannerVideoFromUrl } from '../template/banners.js';
 import { validateSite, loadValidation, reportPath } from '../validate/site.js';
 import { startReport, reportJob, reportInfo, reportDir, REPORT_FILE } from '../report/index.js';
 import { withDownloadButton, upgradeSavedReports } from '../report/download.js';
@@ -453,6 +453,12 @@ app.post('/api/clients/:slug/template/banner', wrap(async (req, res) => {
   if (!(await loadClient(req.params.slug))) throw new Error('Unknown website');
   const slot = String(req.body?.slot || '');
   res.json(req.body?.url ? await saveBannerFromUrl(req.params.slug, slot, req.body.url) : await saveBanner(req.params.slug, slot, { dataUrl: req.body?.dataUrl, name: req.body?.name }));
+}));
+// a looping background video for the banner of a kind of page: an uploaded MP4 or WebM, or one downloaded once from a link
+app.post('/api/clients/:slug/template/banner-video', wrap(async (req, res) => {
+  if (!(await loadClient(req.params.slug))) throw new Error('Unknown website');
+  const slot = String(req.body?.slot || '');
+  res.json(req.body?.url ? await saveBannerVideoFromUrl(req.params.slug, slot, req.body.url) : await saveBannerVideo(req.params.slug, slot, { dataUrl: req.body?.dataUrl, name: req.body?.name }));
 }));
 app.post('/api/clients/:slug/template/refs', wrap(async (req, res) => {
   const { type, url, name, dataUrl, note } = req.body;

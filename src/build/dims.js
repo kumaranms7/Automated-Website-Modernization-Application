@@ -18,9 +18,18 @@ export async function dimsOf(file) {
       const vb = svg.match(/viewBox="[\d.\-]+[ ,]+[\d.\-]+[ ,]+([\d.]+)[ ,]+([\d.]+)"/i);
       if (w && h) d = { w: Math.round(w[1]), h: Math.round(h[1]) };
       else if (vb) d = { w: Math.round(vb[1]), h: Math.round(vb[2]) };
+      // a mark drawn only in white (made for a coloured ground) is told apart, so a design can put it on one
+      const paints = [...svg.matchAll(/(?:^|[\s";])(?:fill|stroke)\s*[=:]\s*"?\s*([^";\s>]+)/gi)].map((m) => m[1].toLowerCase()).filter((c) => !/^(none|transparent|currentcolor|inherit|url)/.test(c));
+      if (d && paints.length && paints.every((c) => /^(#fff(fff)?|white|rgb\(255,?\s*255,?\s*255\))$/.test(c))) d.light = true;
     } else {
       const m = await sharp(file, { failOnError: false }).metadata();
       if (m.width && m.height) d = { w: m.width, h: m.height };
+      if (d && d.w <= 200 && d.h <= 200) {
+        const { data } = await sharp(file, { failOnError: false }).resize(24, 24, { fit: 'inside' }).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+        let sum = 0, weight = 0;
+        for (let i = 0; i < data.length; i += 4) { const a = data[i + 3] / 255; sum += (0.2126 * data[i] + 0.7152 * data[i + 1] + 0.0722 * data[i + 2]) * a; weight += a; }
+        if (weight > 8 && sum / weight > 222) d.light = true;
+      }
     }
   } catch { /* leave without dimensions */ }
   cache.set(file, d);
@@ -54,7 +63,7 @@ export async function fixImageTags(html, rel, { host, roots }) {
 export async function imageDims(model, rel, { host, roots }) {
   const srcs = new Set();
   const walk = (v, key = '') => {
-    if (typeof v === 'string') { if (/^(img|src|image)$/.test(key) && /\.(jpe?g|png|webp|gif)(\?|$)/i.test(v)) srcs.add(v); return; }
+    if (typeof v === 'string') { if (/^(img|src|image|icon)$/.test(key) && /\.(jpe?g|png|webp|gif|svg)(\?|$)/i.test(v)) srcs.add(v); return; }
     if (Array.isArray(v)) { v.forEach((x) => walk(x, key)); return; }
     if (v && typeof v === 'object') for (const [k, x] of Object.entries(v)) { if (k === 'protected' || k === 'head') continue; walk(x, k); }
   };

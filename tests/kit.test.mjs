@@ -1,9 +1,10 @@
 import test from 'node:test';
+import path from 'node:path';
 import assert from 'node:assert/strict';
 import * as cheerio from 'cheerio';
 import { KIT_ICONS } from '../src/kit/icons.js';
 import { PACK_IDS, packById, packFor } from '../src/kit/packs.js';
-import { DESIGNS, DESIGN_IDS } from '../src/kit/designs.js';
+import { DESIGNS, DESIGN_IDS, OFFERED_IDS } from '../src/kit/designs.js';
 import { HERO, LIBRARY, VARIANTS } from '../src/kit/sections.js';
 import { HEADER, FOOTER } from '../src/kit/chrome.js';
 import { placeholderContent } from '../src/kit/content.js';
@@ -202,7 +203,8 @@ test('the old design\'s markup is not carried over: classes, styles and ids are 
   const { cleanHtml } = await import('../src/kit/fit.js');
   const out = cleanHtml('<div class="old-box" style="color:red" id="x" onclick="evil()"><p class="lead" data-x="1">Text with <a class="btn" href="/a.html" target="_blank">a link</a> and <img class="w-full" src="/i.png" alt="A" width="10"></p></div>');
   assert.ok(!/class=|style=|id=|onclick|data-x/.test(out));
-  assert.match(out, /<a href="\/a\.html" target="_blank">a link<\/a>/);
+  // (a link that opens a new tab is told not to hand the page over to it)
+  assert.match(out, /<a href="\/a\.html" target="_blank" rel="noopener">a link<\/a>/);
   assert.match(out, /<img src="\/i\.png" alt="A" width="10">/);
 });
 
@@ -271,6 +273,133 @@ test('the kinds of section of a website are found from its pages, and a kind has
   collectSections(false); setKindPool(null);
   const all = c2['B.html'].filter((x) => !x.hero);
   for (const k of [...ka, ...kb]) assert.ok(all.some((x) => x.kind === k.kind.id), `kind ${k.kind.label} is in the preview`);
+});
+
+// ---------- designs with layouts of their own, and the background video ----------
+test('the new designs have layouts of their own: no layout is shared with another design, and each draws real content and an empty section', async () => {
+  const { NEW_DESIGNS } = await import('../src/kit/designs/index.js');
+  const ids = Object.keys(NEW_DESIGNS);
+  assert.ok(ids.length >= 2 && DESIGN_IDS.slice(0, ids.length).join() === ids.join(), 'the new designs are shown first');
+  const used = {};
+  for (const d of DESIGN_IDS) for (const kind of ['home', 'inner', 'contact']) for (const b of DESIGNS[d][kind]) (used[`${b.type}:${b.variant}`] ||= new Set()).add(d);
+  for (const id of ids) {
+    const prefix = { signature: 'sg-', horizon: 'hz-', vertex: 'vx-', lumen: 'lm-', nova: 'nv-', crest: 'cr-', harbor: 'hb-', operator: 'op-', atlas: 'at-', meridian: 'mr-' }[id];
+    for (const kind of ['home', 'inner', 'contact']) for (const b of NEW_DESIGNS[id][kind]) {
+      assert.ok(b.variant.startsWith(prefix), `${id}.${kind}: ${b.variant} is the design's own`);
+      assert.deepEqual([...used[`${b.type}:${b.variant}`]], [id], `${b.type}:${b.variant} belongs to ${id} only`);
+    }
+  }
+  // every layout of the new designs draws an empty section and one full of content without failing, and keeps every item
+  const K = context({ site: { name: 'Acme', phone: { display: '(555) 010-2030', digits: '5550102030' } }, pack: packById('plumbing'), nav: [{ label: 'Home', href: '/' }] });
+  const long = 'A long sentence that explains the point in some detail. '.repeat(8);
+  const data = { title: 'A heading', eyebrow: 'Label', lead: 'Lead text', text: long, items: Array.from({ length: 9 }, (_, i) => ({ title: `Item ${i} title`, text: long, quote: long, name: `Person ${i}`, place: 'Town', value: `${i}0+`, label: `Figure ${i}`, q: `Question ${i}?`, a: `<p>Answer ${i}</p>`, href: '/x.html', img: '' })), groups: [{ title: 'Places', links: [{ text: 'One', href: '/1.html' }, { text: 'Two' }] }], blocks: [{ t: 'html', html: '<p>First paragraph.</p>' }] };
+  for (const [role, variants] of Object.entries(LIBRARY)) for (const [variant, fn] of Object.entries(variants)) {
+    if (!/^(sg|hb|op|at|mr)-/.test(variant)) continue;
+    assert.doesNotThrow(() => fn({}, K), `${role}:${variant} empty`);
+    const html = fn(data, K);
+    if (['services', 'features', 'steps', 'trust'].includes(role)) for (let i = 0; i < 9; i += 1) assert.ok(html.includes(`Item ${i} title`), `${role}:${variant} shows item ${i}`);
+    if (role === 'faq') for (let i = 0; i < 9; i += 1) assert.ok(html.includes(`Question ${i}?`) && html.includes(`Answer ${i}`), `${variant} shows question ${i}`);
+    if (role === 'reviews') for (let i = 0; i < 9; i += 1) assert.ok(html.includes(`Person ${i}`), `${variant} shows review ${i}`);
+  }
+});
+
+test('a background video chosen for a banner is drawn behind the hero of the page, with a button to pause it, in every design', () => {
+  const html = '<html><body><header>h</header><main><h1>Title of the page</h1><p>Intro text of the page that is long enough to be a lead paragraph for the hero.</p><h2>About us</h2><p>' + 'We have been serving the area with honest work. '.repeat(6) + '</p></main><footer>f</footer></body></html>';
+  const model = extractModel(html, 'index.html');
+  for (const design of DESIGN_IDS) for (const kind of ['home', 'inner']) {
+    const spec = normalizeSpec({ kit: { design }, extras: { banners: { [kind]: { video: { src: 'assets/banners/home-v1a2b3c4d.mp4' } } } } }, DEFAULT_SPEC);
+    assert.equal(spec.extras.banners[kind].video.src, 'assets/banners/home-v1a2b3c4d.mp4');
+    const out = fitPage({ model, site: SITE, spec, u: (h) => h, kind }).main;
+    assert.match(out, /<video[^>]+data-k-video[^>]+autoplay muted loop playsinline/, `${design}/${kind} draws the video`);
+    assert.match(out, /home-v1a2b3c4d\.mp4/);
+    assert.match(out, /data-k-vpause/, `${design}/${kind} has the pause button`);
+  }
+  // only a video file of the platform is kept in a banner
+  const bad = normalizeSpec({ extras: { banners: { home: { video: { src: 'https://x.test/a.mp4' } }, inner: { video: { src: '../a.mp4' } } } } }, DEFAULT_SPEC);
+  assert.equal(bad.extras.banners.home.video, undefined);
+  assert.equal(bad.extras.banners.inner.video, undefined);
+});
+
+test('a banner video is checked by what it holds, not by its name', async () => {
+  const { saveBannerVideo, isBannerVideo, bannerFolder } = await import('../src/template/banners.js');
+  const fs = await import('node:fs/promises');
+  const slug = 'zz-video-test';
+  const mp4 = Buffer.concat([Buffer.from([0, 0, 0, 24]), Buffer.from('ftypmp42'), Buffer.alloc(40)]);
+  try {
+    const ok = await saveBannerVideo(slug, 'home', { dataUrl: `data:video/mp4;base64,${mp4.toString('base64')}`, name: 'a.mp4' });
+    assert.ok(isBannerVideo(ok.src) && ok.type === 'mp4');
+    await assert.rejects(() => saveBannerVideo(slug, 'home', { dataUrl: `data:video/mp4;base64,${Buffer.from('this is plain text, not a video').toString('base64')}`, name: 'b.mp4' }), /MP4 or WebM/);
+    await assert.rejects(() => saveBannerVideo(slug, 'nowhere', { dataUrl: `data:video/mp4;base64,${mp4.toString('base64')}` }), /home, inner or contact/);
+  } finally { await fs.rm(path.join(path.dirname(bannerFolder(slug)), '..', '..', '..'), { recursive: true, force: true }); } // (the folder of the test website)
+});
+
+test('the motion toolkit script is valid and holds every control the designs rely on', async () => {
+  const { KIT_SCRIPT } = await import('../src/kit/page.js');
+  assert.doesNotThrow(() => new Function(KIT_SCRIPT), 'the script parses');
+  for (const hook of ['data-k-words', 'data-k-img', 'data-k-parallax', 'data-k-vline', 'data-k-top', 'data-k-progress', 'data-k-sticky', 'data-scroller', 'data-slider', 'data-count', 'data-k-pause', 'data-k-vpause']) assert.ok(KIT_SCRIPT.includes(hook), `${hook} is driven`);
+  assert.ok(KIT_SCRIPT.includes('prefers-reduced-motion'), 'the visitor who prefers less motion is respected');
+  // the count-up reads a figure and its text around it (the regular expressions survive the template string)
+  const re = new RegExp(KIT_SCRIPT.match(/m=\/(.*?)\/\.exec/)[1]);
+  assert.deepEqual(re.exec('18,000+').slice(1), ['', '18,000', '+']);
+  assert.deepEqual(re.exec('$4.9M').slice(1), ['$', '4.9', 'M']);
+});
+
+// ---------- Signature: the page's own order, the theme's colours, the details of Design settings ----------
+test('Signature is the design on offer; it keeps the sections of a page in the page\'s own order', () => {
+  // (six designs are on offer: each with its own layouts and its own motion, all four on the same reading of a page)
+  assert.deepEqual(OFFERED_IDS, ['signature', 'horizon', 'vertex', 'lumen', 'nova', 'crest']);
+  for (const id of ['aurora', 'bento', 'atlas']) assert.ok(DESIGNS[id] && !OFFERED_IDS.includes(id), `${id} still draws a saved template, and is not offered`);
+  const para = (n) => `<p>${'We have been serving the area with honest work. '.repeat(n)}</p>`;
+  // a page whose order no blueprint would choose: questions first, a list, a text, the reviews-like text last
+  const html = `<html><body><header>h</header><main><h1>Emergency plumbing</h1><p>Intro text of the page that is long enough to be a lead paragraph for the hero.</p>
+    <h2>Zeta questions</h2><h3>Do you work at night?</h3><p>Yes, every night of the year.</p><h3>Do you charge more at weekends?</h3><p>No, the price is the same.</p><h3>Are you licensed?</h3><p>Yes, fully licensed and insured.</p>
+    <h2>Alpha story</h2>${para(8)}
+    <h2>Midway points</h2><ul><li>First point of the list</li><li>Second point of the list</li><li>Third point of the list</li><li>Fourth point of the list</li></ul>
+    <h2>Omega closing</h2>${para(8)}</main><footer>f</footer></body></html>`;
+  const model = extractModel(html, 'emergency.html');
+  const spec = normalizeSpec({ kit: { design: 'signature' } }, DEFAULT_SPEC);
+  const { main, header, footer } = fitPage({ model, site: SITE, spec, u: (h) => h, kind: 'inner' });
+  const at = ['Zeta questions', 'Alpha story', 'Midway points', 'Omega closing'].map((t) => main.search(new RegExp(t.split(' ').join('\\s*(?:<[^>]+>\\s*)*'))));
+  assert.ok(at.every((i) => i > 0), `every section is drawn (${at})`);
+  assert.deepEqual([...at].sort((a, b) => a - b), at, 'in the order of the page');
+  // every section is drawn by the design itself, in its own layouts, and nothing of the page is lost
+  for (const t of ['Do you work at night?', 'Yes, every night of the year.', 'Fourth point of the list', 'Emergency plumbing']) assert.ok(main.includes(t), t);
+  assert.match(main, /<details/, 'questions fold');
+  assert.match(header, /data-k-header/);
+  assert.match(footer, /data-k-pause/);
+  assert.doesNotMatch(main, /bg-night|text-heading on-dark/, 'no layout of another design');
+});
+
+test('Signature draws with the theme: the calls to action take its livelier second colour, and Design settings can choose another', () => {
+  const pop = (spec) => tailor('signature', { spec }).vars['--d-pop-500'];
+  const theme = (base) => ({ base: { neutral: '#444444', ...base }, mode: 'light' });
+  assert.equal(pop(normalizeSpec({ theme: theme({ primary: '#19858e', secondary: '#e47229', accent: '#1a2828' }) }, DEFAULT_SPEC)), 'var(--th-secondary-500)', 'the orange, not the grey');
+  assert.equal(pop(normalizeSpec({ theme: theme({ primary: '#19858e', secondary: '#1a2828', accent: '#e47229' }) }, DEFAULT_SPEC)), 'var(--th-accent-500)');
+  assert.equal(pop(normalizeSpec({ theme: theme({ primary: '#19858e', secondary: '#333333', accent: '#3a3a3a' }) }, DEFAULT_SPEC)), 'var(--th-primary-500)', 'two greys: the primary colour');
+  assert.equal(pop(normalizeSpec({ theme: theme({ primary: '#19858e', secondary: '#e47229', accent: '#1a2828' }), extras: { web: { pop: 'primary' } } }, DEFAULT_SPEC)), 'var(--th-primary-500)', 'chosen in Design settings');
+  const btn = tailor('signature', { spec: normalizeSpec({ theme: theme({ primary: '#19858e', secondary: '#e47229', accent: '#1a2828' }) }, DEFAULT_SPEC) }).vars['--d-pop-btn'];
+  assert.match(btn, /^var\(--th-secondary-(600|700|800)\)$/, 'a shade that carries white text');
+});
+
+test('Design settings > Website details and motion: checked values, and what they change on the page', () => {
+  const web = normalizeSpec({ extras: { web: { announce: { text: 'Same-day <b>service</b>', href: 'javascript:alert(1)' }, cta: { label: 'Book a visit', href: '/book.html' }, hours: 'Mon to Fri 8 to 5', tagline: 'Licensed since 1998', social: { facebook: 'https://facebook.com/acme', instagram: 'not a link' }, hero: { overlay: 'strong', height: 'nope' }, motion: { level: 'off' }, controls: { sticky: false }, pop: 'weird' } } }, DEFAULT_SPEC).extras.web;
+  assert.deepEqual(web.announce, { on: true, text: 'Same-day bservice/b', href: '' });
+  assert.deepEqual(web.social, { facebook: 'https://facebook.com/acme' });
+  assert.deepEqual([web.hero.overlay, web.hero.height, web.pop, web.motion.level, web.controls.sticky, web.controls.top], ['strong', 'tall', 'auto', 'off', false, true]);
+  assert.equal(normalizeSpec({}, DEFAULT_SPEC).extras.web.motion.level, 'full', 'everything has a default');
+  const html = '<html><body><header>h</header><main><h1>Title of the page</h1><p>Intro text of the page that is long enough to be a lead paragraph for the hero.</p><h2>About us</h2><p>' + 'We have been serving the area with honest work. '.repeat(6) + '</p></main><footer>f</footer></body></html>';
+  const model = extractModel(html, 'about.html');
+  const spec = normalizeSpec({ kit: { design: 'signature' }, extras: { web: { announce: { text: 'Free estimates this month' }, cta: { label: 'Book a visit', href: '/book.html' }, hours: 'Mon to Fri 8 to 5', tagline: 'Licensed since 1998', social: { facebook: 'https://facebook.com/acme' }, controls: { sticky: false } } } }, DEFAULT_SPEC);
+  const page = fitPage({ model, site: SITE, spec, u: (h) => h, kind: 'inner' });
+  assert.match(page.header, /Free estimates this month/);
+  assert.match(page.header, /href="\/book\.html"[^>]*>Book a visit/);
+  assert.match(page.footer, /Licensed since 1998/);
+  assert.match(page.footer, /Mon to Fri 8 to 5/);
+  assert.match(page.footer, /href="https:\/\/facebook\.com\/acme"/);
+  assert.match(page.footer, /data-k-top/);
+  assert.doesNotMatch(page.footer, /data-k-sticky/, 'turned off');
+  assert.equal(page.design.motion, 'full');
+  assert.equal(tailor('signature', { spec: normalizeSpec({ extras: { web: { motion: { level: 'subtle' } } } }, DEFAULT_SPEC) }).motion, 'subtle');
 });
 
 // ---------- alternating section colours, and the tone and spacing of a section ----------
@@ -445,11 +574,11 @@ test('the existing layouts move by themselves, every time they appear; what is c
   const { DEFAULT_MOTION, motionDefaults, withMotion, motionOf } = await import('../src/kit/motion.js');
   const { applyTones } = await import('../src/kit/tones.js');
   const { cleanStyle } = await import('../src/kit/parts.js');
-  for (const id of ['aurora', 'bento', 'midnight', 'editorial', 'clarity', 'local']) {
+  for (const id of DESIGN_IDS.filter((x) => !DESIGNS[x].keepOrder)) { // (a design that moves through the motion toolkit sets its motion on its own markup)
     const d = motionDefaults(id);
     assert.ok(d.section.entrance && d.section.replay === 'yes' && d.item.stagger === 'yes' && d.item.replay === 'yes', id + ' moves, and replays');
   }
-  assert.deepEqual(Object.keys(DEFAULT_MOTION).sort(), ['aurora', 'bento', 'clarity', 'editorial', 'local', 'midnight']);
+  assert.deepEqual(Object.keys(DEFAULT_MOTION).sort(), [...DESIGN_IDS].sort());
   const sec = '<section class="relative py-[var(--k-sec-y)]"><a class="inline-flex rounded-full border border-default bg-surface" href="/a">A</a></section>';
   const motion = motionDefaults('aurora');
   const parts = [sec, sec];
@@ -516,4 +645,23 @@ test('the text of the page can be styled: its block, and the paragraphs, heading
   assert.deepEqual(cleanStyle({ paragraph: { color: 'theme:accent', hide: 'yes', entrance: 'fade', gap: 'huge' } }), { paragraph: { color: 'theme:accent' } });
   assert.equal(tagParts(html, { paragraph: { color: 'theme:accent' } }).includes('--k-pa-fg'), true);
   assert.equal(tagParts('<div class="grid"><p>x</p></div>', { paragraph: { color: 'theme:accent' } }).includes('--k-pa-fg'), false, 'only a block of text carries them');
+});
+
+test('a design that carries a pattern takes the one that suits the business, or the one chosen in Design settings', async () => {
+  const { patternFor, PATTERNS } = await import('../src/kit/designs/shared.js');
+  assert.equal(patternFor('auto', packById('plumbing'), 'Acme'), 'waves');
+  assert.equal(patternFor('auto', packById('construction'), 'Acme'), 'grid');
+  assert.equal(patternFor('hex', packById('plumbing'), 'Acme'), 'hex', 'a chosen pattern wins');
+  assert.equal(patternFor('none', packById('plumbing'), 'Acme'), 'none');
+  assert.ok(PATTERNS.includes(patternFor('auto', packById('generic'), 'Acme Co')), 'a business of no known kind gets one by its name');
+  assert.equal(patternFor('auto', packById('generic'), 'Acme Co'), patternFor('auto', packById('generic'), 'Acme Co'), 'and always the same one');
+  assert.equal(normalizeSpec({ extras: { web: { pattern: 'bogus' } } }, DEFAULT_SPEC).extras.web.pattern, 'auto', 'an unknown choice is automatic');
+  assert.equal(normalizeSpec({ extras: { web: { pattern: 'rings' } } }, DEFAULT_SPEC).extras.web.pattern, 'rings');
+  const pc = placeholderContent(profile('Plumbing and drain cleaning'), { name: 'Acme' });
+  const page = (id) => renderKitPage({ design: id, kind: 'home', content: pc.pages.home, site: pc.site, pack: pc.pack, active: null });
+  assert.match(page('crest'), /<body[^>]* data-k-pat="waves"/, 'the page names its pattern');
+  assert.match(page('signature'), /<body[^>]* data-k-pat="none"/, 'a design without a pattern names none');
+  assert.equal(DESIGNS.crest.pattern, undefined, 'nothing is written on the design that every website shares');
+  const css = await kitCss();
+  for (const name of PATTERNS) assert.ok(new RegExp('data-k-pat="?' + name + '"?\\]').test(css), 'the stylesheet draws ' + name);
 });

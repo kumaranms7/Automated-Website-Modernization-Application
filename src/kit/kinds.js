@@ -49,3 +49,5 @@ export async function innerKinds(slug, spec, { onProgress } = {}) {
 }
 
 export const loadInnerKinds = (slug) => readJson(file(slug), null);
+
+export { rebase } from './rebase.js';
