@@ -4,6 +4,10 @@ import { VERTEX } from './vertex.js';
 import { LUMEN } from './lumen.js';
 import { NOVA } from './nova.js';
 import { CREST } from './crest.js';
+import { ORBIT } from './orbit.js';
+import { VISTA } from './vista.js';
+import { FACET } from './facet.js';
+import { ZEPHYR } from './zephyr.js';
 import { HARBOR } from './harbor.js';
 import { OPERATOR } from './operator.js';
 import { ATLAS } from './atlas.js';
@@ -11,7 +15,7 @@ import { MERIDIAN } from './meridian.js';
 
 // The designs that have layouts of their own: every one of them brings its hero, its layouts for each kind of section, its header and its
 // footer, so no two of them share a layout. Listed in the order the designs are shown.
-const ALL = [SIGNATURE, HORIZON, VERTEX, LUMEN, NOVA, CREST, HARBOR, OPERATOR, ATLAS, MERIDIAN];
+const ALL = [SIGNATURE, HORIZON, VERTEX, LUMEN, NOVA, CREST, ORBIT, VISTA, FACET, ZEPHYR, HARBOR, OPERATOR, ATLAS, MERIDIAN];
 
 export const NEW_DESIGNS = Object.fromEntries(ALL.map((d) => [d.design.id, d.design]));
 export const NEW_HERO = Object.assign({}, ...ALL.map((d) => d.hero));

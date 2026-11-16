@@ -640,14 +640,13 @@ function webBlock() {
   select(h, 'Veil over the picture or video', [['light', 'Light (the picture shows more)'], ['medium', 'Medium'], ['strong', 'Strong (the text reads best)']], () => w.hero.overlay || 'medium', (v) => { w.hero.overlay = v; });
   select(h, 'Height of the home hero', [['standard', 'Standard'], ['tall', 'Tall'], ['full', 'Full screen']], () => w.hero.height || 'tall', (v) => { w.hero.height = v; });
   check(h, 'Small labels over sections (Reviews, Questions, Service areas…)', () => w.labels !== false, (v) => { w.labels = v; });
-  select(h, 'Background pattern of the banner and the bands (Crest design)', [['auto', 'Automatic (suits the kind of business)'], ['waves', 'Waves'], ['dots', 'Dots'], ['grid', 'Grid'], ['hatch', 'Fine diagonal lines'], ['plus', 'Crosses'], ['rings', 'Rings'], ['hex', 'Honeycomb'], ['none', 'No pattern']], () => w.pattern || 'auto', (v) => { w.pattern = v; });
+  select(h, 'Background pattern of the banner (Crest, Orbit, Vista, Facet and Zephyr designs)', [['auto', 'Automatic (suits the kind of business)'], ['waves', 'Waves'], ['dots', 'Dots'], ['grid', 'Grid'], ['hatch', 'Fine diagonal lines'], ['plus', 'Crosses'], ['rings', 'Rings'], ['hex', 'Honeycomb'], ['none', 'No pattern']], () => w.pattern || 'auto', (v) => { w.pattern = v; });
 
   const m = card('Motion', 'Headings that rise word by word, pictures that are uncovered, numbers that count up. Visitors who ask their device for less motion always get a still page.');
   select(m, 'How much the page moves', [['full', 'Full'], ['subtle', 'Subtle (fades only)'], ['off', 'Off']], () => w.motion.level || 'full', (v) => { w.motion.level = v; });
   check(m, 'Slow zoom on the hero picture', () => w.motion.zoom !== false, (v) => { w.motion.zoom = v; });
   check(m, 'Reading progress bar at the top', () => w.controls.progress !== false, (v) => { w.controls.progress = v; });
   check(m, 'Back-to-top button', () => w.controls.top !== false, (v) => { w.controls.top = v; });
-  check(m, 'Call-to-action button that appears while scrolling', () => w.controls.sticky !== false, (v) => { w.controls.sticky = v; });
 
   wrap.append(grid);
   return wrap;
@@ -1139,7 +1138,7 @@ const cs = { on: false, key: '', zone: '', section: null, busy: false, y: 0 };
 const csDoc = () => { try { return $('td-fn').contentDocument; } catch { return null; } };
 const csPath = () => tp.state?.preview?.pages?.[tp.slot] || '';
 const ROLE_LABEL = { hero: 'Hero', trust: 'Trust points', services: 'Services / cards', about: 'Text', features: 'Features', steps: 'Steps', stats: 'Numbers', reviews: 'Reviews', faq: 'Questions & answers', areas: 'Areas', cta: 'Call to action', contact: 'Contact' };
-const csTitle = (role, variant) => `${ROLE_LABEL[role] || role} · ${String(variant || '').replace(/-/g, ' ')}`;
+const csTitle = (role, variant, from) => `${ROLE_LABEL[role] || role} · ${from ? `${from} layout` : String(variant || '').replace(/-/g, ' ')}`;
 
 // where the page is now (so it can come back there), and back to the part that was selected once the preview has been drawn again
 const csRemember = () => { try { cs.y = csDoc()?.defaultView?.scrollY || 0; } catch { cs.y = 0; } };
@@ -1182,7 +1181,7 @@ function csMark() {
 function csShell(html) {
   const doc = csDoc();
   const head = doc.head.innerHTML.replace(/<script[\s\S]*?<\/script>/gi, '');
-  return `<!doctype html><html lang="en"><head><base href="${doc.baseURI}">${head}<style>html{overflow:hidden}header,footer,[data-k-header]{display:none!important}*{animation:none!important;opacity:1!important}</style></head><body class="${doc.body.className}" style="${doc.body.getAttribute('style') || ''}"><main>${html}</main></body></html>`;
+  return `<!doctype html><html lang="en"><head><base href="${doc.baseURI}">${head}<style>html{overflow:hidden}header,footer,[data-k-header]{display:none!important}*{animation:none!important;opacity:1!important}</style></head><body class="${doc.body.className}" data-k-skin="${doc.body.getAttribute('data-k-skin') || 'day'}" data-k-pat="${doc.body.getAttribute('data-k-pat') || 'none'}" style="${doc.body.getAttribute('style') || ''}"><main>${html}</main></body></html>`;
 }
 
 function csCard(opt, current, pick) {
@@ -1191,7 +1190,7 @@ function csCard(opt, current, pick) {
   const fr = document.createElement('iframe'); fr.loading = 'lazy'; fr.tabIndex = -1; fr.title = opt.label; fr.srcdoc = csShell(opt.html);
   thumb.append(fr);
   const cap = el('div', undefined, 'cs-cap');
-  cap.append(el('b', opt.label), el('small', current ? 'Current' : opt.note ? `Used in this design on: ${opt.note}` : ''));
+  cap.append(el('b', opt.label), el('small', current ? 'Current layout' : opt.design ? (opt.own ? 'This design' : `${ROLE_LABEL[opt.role] || 'Layout'} of the ${opt.design} design`) : opt.note ? `Used in this design on: ${opt.note}` : ''));
   card.append(thumb, cap);
   card.onclick = () => { if (pick) pick(); else if (!current) csApply({ role: opt.role, variant: opt.variant }); };
   requestAnimationFrame(() => { fr.style.transform = `scale(${(thumb.clientWidth || 380) / 1280})`; });
@@ -1215,7 +1214,7 @@ async function csLibrary(after) {
       const d = document.createElement('details'); d.className = 'cs-lib';
       const sm = document.createElement('summary'); sm.append(el('b', t.title), el('small', `${t.layouts.length} layout${t.layouts.length === 1 ? '' : 's'}`)); d.append(sm);
       let filled = false;
-      d.addEventListener('toggle', () => { if (!d.open || filled) return; filled = true; t.layouts.forEach((l) => d.append(csCard({ label: l.variant.replace(/-/g, ' '), html: l.html, role: t.type, variant: l.variant }, false, () => csAdd(t.type, l.variant, after)))); });
+      d.addEventListener('toggle', () => { if (!d.open || filled) return; filled = true; t.layouts.forEach((l) => d.append(csCard({ label: l.design || l.variant.replace(/-/g, ' '), design: l.design, own: l.own, html: l.html, role: t.type, variant: l.variant }, false, () => csAdd(t.type, l.variant, after)))); });
       out.push(d);
     });
     body.replaceChildren(...out);
@@ -1276,7 +1275,7 @@ function csDrag(row, key, list) {
 }
 
 async function csOverview() {
-  cs.key = ''; cs.zone = ''; cs.section = null; csMark();
+  cs.key = ''; cs.zone = ''; cs.section = null; cs.tabKey = ''; csMark();
   const body = $('td-cs-body');
   $('td-cs-hint').textContent = 'Click a section, the header or the footer in the preview, or choose one here.';
   let list = [];
@@ -1296,7 +1295,7 @@ async function csOverview() {
   out.push(el('h3', 'This page', 'cs-h'));
   if (hero) {
     const row = el('div', undefined, 'cs-row'); const nm = el('button', undefined, 'cs-name'); nm.type = 'button';
-    nm.append(el('b', 'Hero'), el('small', String(hero.variant || '').replace(/-/g, ' ') + (Object.keys(hero.style || {}).length ? ' · styled' : '')));
+    nm.append(el('b', 'Hero'), el('small', (hero.from ? `${hero.from} layout` : String(hero.variant || '').replace(/-/g, ' ')) + (Object.keys(hero.style || {}).length ? ' · styled' : '')));
     nm.onclick = () => { csGoto('hero'); csSelect('hero'); }; row.append(nm); out.push(row);
   }
   if (!vis.length) out.push(el('p', 'No sections to show. Rebuild the preview, then try again.', 'hint'));
@@ -1309,7 +1308,7 @@ async function csOverview() {
     const grip = el('span', '⋮⋮', 'cs-grip'); grip.title = 'Drag to move this section';
     csDrag(row, s.key, list);
     const name = el('button', undefined, 'cs-name'); name.type = 'button';
-    name.append(el('b', s.label), el('small', csTitle(s.role, s.variant) + (Object.keys(s.style || {}).length ? ' · styled' : '') + (s.external ? ' · from another page' : '') + (s.pages > 1 ? ` · ${s.pages} pages` : '')));
+    name.append(el('b', s.label), el('small', csTitle(s.role, s.variant, s.from) + (Object.keys(s.style || {}).length ? ' · styled' : '') + (s.external ? ' · from another page' : '') + (s.pages > 1 ? ` · ${s.pages} pages` : '')));
     name.onclick = () => { csGoto(s.key); csSelect(s.key); };
     row.append(grip, name, csBtn('↑', 'Move up', () => csMove(list, s.key, -1), i === 0), csBtn('↓', 'Move down', () => csMove(list, s.key, 1), i === vis.length - 1), csBtn('✕', 'Remove this section from the page', () => csHide(s.key, true, s.label)));
     out.push(row);
@@ -1450,10 +1449,10 @@ async function csSelect(key) {
     const s = r.section;
     if (!s || s.hidden) { await csOverview(); return; }
     cs.section = s;
-    $('td-cs-hint').textContent = 'Pick a layout. It is applied to this section on this page only.';
+    $('td-cs-hint').textContent = s.hero ? (s.inner ? 'Pick a layout for the hero. It is the same on every inner page.' : 'Pick a layout for the hero of this page.') : 'Pick a layout: of this design, or the one another design gives the same content.';
     const out = [];
     const top = el('div', undefined, 'cs-sel');
-    top.append(el('b', s.label), el('small', s.edited ? 'Custom HTML' : csTitle(s.role, s.variant)));
+    top.append(el('b', s.label), el('small', s.edited ? 'Custom HTML' : csTitle(s.role, s.variant, s.from)));
     if (s.kind && s.kind !== 'added' && !s.hero) top.append(el('small', `${s.external ? 'From another page · ' : ''}${s.pages > 1 ? `This kind of section is on ${s.pages} pages. ` : ''}A layout or style chosen here applies to all of them.`, 'hint'));
     if (s.choice) { const rb = el('button', 'Use the design’s own layout', 'btn ghost sm2'); rb.type = 'button'; rb.onclick = () => csApply({ reset: true }); top.append(rb); }
     out.push(top);
@@ -1463,21 +1462,45 @@ async function csSelect(key) {
     const back = el('button', '← All sections', 'btn ghost sm2'); back.type = 'button'; back.onclick = csOverview;
     if (s.hero) bar.append(back); else bar.append(back, csBtn('↑ Move up', 'Move this section up', () => csMove(list, key, -1), at <= 0), csBtn('↓ Move down', 'Move this section down', () => csMove(list, key, 1), at < 0 || at === vis.length - 1), csBtn('</> Edit HTML', 'Change the markup of this section', () => csEditor(key, s.label, s.edited)), csBtn('+ Add below', 'Add a section from the library below this one', () => csLibrary(key)), csBtn('✕ Remove', 'Remove this section from the page', () => csHide(key, true, s.label)));
     out.push(bar);
+    // two panes: the layouts this section can be drawn in (shown first), and the styles of its parts
+    if (cs.tabKey !== key) { cs.tabKey = key; cs.tab = 'layout'; }
+    const layoutPane = el('div', undefined, 'cs-pane'), stylePane = el('div', undefined, 'cs-pane');
+    const tabs = el('div', undefined, 'cs-tabs');
+    const show = (id) => { cs.tab = id; layoutPane.style.display = id === 'layout' ? '' : 'none'; stylePane.style.display = id === 'style' ? '' : 'none'; tabs.querySelectorAll('button').forEach((x) => x.classList.toggle('on', x.dataset.tab === id)); };
+    [['layout', 'Layout'], ['style', 'Style']].forEach(([id, label]) => { const t = el('button', label, 'cs-tab'); t.type = 'button'; t.dataset.tab = id; t.onclick = () => show(id); tabs.append(t); });
+    out.push(tabs, layoutPane, stylePane);
     // the hero of an inner page: the background, plain or one of the page's own pictures
-    if (s.hero && s.bg) out.push(csHeroBg(s.bg));
+    if (s.hero && s.bg) layoutPane.append(csHeroBg(s.bg));
     // the parts of the section: design, colours, size, animation, text
-    out.push(ktStyleBox({ b: { type: s.role, style: s.style || {} }, root: () => csDoc()?.querySelector(`[data-kit-key="${key}"]`), edit: (patch) => csApplyStyle(patch.style), play: () => { try { csDoc().defaultView.kitReplay?.(); } catch { /* not reachable */ } } }));
+    stylePane.append(ktStyleBox({ b: { type: s.role, style: s.style || {} }, root: () => csDoc()?.querySelector(`[data-kit-key="${key}"]`), edit: (patch) => csApplyStyle(patch.style), play: () => { try { csDoc().defaultView.kitReplay?.(); } catch { /* not reachable */ } } }));
     const cur = `${s.role}:${s.variant}`;
-    // the kinds of section the content can be drawn as: the current kind first, then the others it can become
-    const roles = [s.role, ...new Set(s.options.map((o) => o.role).filter((r) => r !== s.role))].filter((r) => s.options.some((o) => o.role === r));
-    const same = s.options.filter((o) => o.role === s.role);
-    roles.forEach((role) => {
-      out.push(el('h3', role === s.role ? `Other ${ROLE_LABEL[role] || 'layouts'} layouts` : `Show as ${ROLE_LABEL[role] || role}`, 'cs-h'));
-      s.options.filter((o) => o.role === role).forEach((o) => out.push(csCard(o, o.id === cur)));
+    const rolesOf = (list) => [s.role, ...new Set(list.map((o) => o.role).filter((r) => r !== s.role))].filter((r) => list.some((o) => o.role === r));
+    const sameOwn = s.options.filter((o) => o.role === s.role && o.own !== false), sameOther = s.options.filter((o) => o.role === s.role && o.own === false);
+    // the layouts of this design for this kind of section
+    if (sameOwn.length) {
+      layoutPane.append(el('h3', sameOther.length ? 'This design' : `Other ${ROLE_LABEL[s.role] || 'layouts'} layouts`, 'cs-h'));
+      sameOwn.forEach((o) => layoutPane.append(csCard(o, o.id === cur)));
+    }
+    // the layouts the other designs give the same content
+    if (sameOther.length) {
+      layoutPane.append(el('h3', 'From other designs', 'cs-h'), el('small', 'The same content in the layout another design gives it. It keeps the shapes of that design, and the colours and fonts of this website.', 'hint'));
+      sameOther.forEach((o) => layoutPane.append(csCard(o, o.id === cur)));
+    }
+    // the other kinds of section the content can become: folded, this design's layout first
+    rolesOf(s.options).filter((r) => r !== s.role).forEach((role) => {
+      const list = s.options.filter((o) => o.role === role);
+      const d = document.createElement('details'); d.className = 'cs-lib';
+      const sm = document.createElement('summary'); sm.append(el('b', `Show as ${ROLE_LABEL[role] || role}`), el('small', `${list.length} layout${list.length === 1 ? '' : 's'}`)); d.append(sm);
+      let filled = false;
+      const fill = () => { if (filled) return; filled = true; list.forEach((o) => d.append(csCard(o, o.id === cur))); };
+      d.addEventListener('toggle', () => { if (d.open) fill(); });
+      if (list.length <= 3 || list.some((o) => o.id === cur)) { d.open = true; fill(); }
+      layoutPane.append(d);
     });
-    if (s.hero && !s.options.length) out.push(el('p', 'The hero of an inner page has one layout. Its parts can be styled above.', 'hint'));
-    else if (!same.length && roles.length < 2) out.push(el('p', 'No other layout can show this content without losing part of it.', 'hint'));
+    if (s.hero && s.options.length < 2) layoutPane.append(el('p', 'This hero has one layout. Its parts can be styled in the Style tab.', 'hint'));
+    else if (s.options.filter((o) => o.role === s.role).length < 2 && rolesOf(s.options).length < 2) layoutPane.append(el('p', 'No other layout can show this content without losing part of it.', 'hint'));
     body.replaceChildren(...out);
+    show(cs.tab);
   } catch (e) { body.replaceChildren(el('p', e.message || 'Could not load the layouts', 'hint')); }
 }
 
@@ -1486,7 +1509,9 @@ async function csApply(choice) {
   csRemember();
   cs.busy = true; $('td-cs').classList.add('busy');
   try {
-    await api(`/api/clients/${slug}/kit`, { method: 'PUT', body: { pageSection: { path: csPath(), key: cs.key, ...csKind(), ...choice } } });
+    const innerHero = cs.key === 'hero' && Boolean(cs.section?.inner);
+    const body = innerHero && choice.variant ? { innerHero: choice.variant } : { pageSection: { path: csPath(), key: cs.key, ...csKind(), ...choice }, ...(innerHero && choice.reset ? { innerHero: '' } : {}) };
+    await api(`/api/clients/${slug}/kit`, { method: 'PUT', body });
     await runPreview();
   } catch (e) { toast(e.message || 'Could not apply that layout', true); }
   cs.busy = false; $('td-cs').classList.remove('busy');

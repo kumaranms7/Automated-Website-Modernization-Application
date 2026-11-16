@@ -60,6 +60,7 @@ test('every variant of every section draws with placeholder content, with no lef
   for (const id of DESIGN_IDS) for (const kind of ['home', 'inner', 'contact']) {
     const html = renderKitPage({ design: id, kind, content: pc.pages[kind], site: pc.site, pack: pc.pack, active: null });
     assert.ok(!/undefined|NaN|\[object/.test(html.replace(/<style>[\s\S]*?<\/style>/g, '')), `${id}/${kind} has a stray value`);
+    assert.ok(!html.includes('data-k-sticky'), `${id}/${kind}: no call-to-action button floats over the page`);
     const $ = cheerio.load(html);
     assert.equal($('h1').length, 1, `${id}/${kind} has one h1`);
     assert.ok($('main section').length >= 3, `${id}/${kind} sections`);
@@ -283,7 +284,7 @@ test('the new designs have layouts of their own: no layout is shared with anothe
   const used = {};
   for (const d of DESIGN_IDS) for (const kind of ['home', 'inner', 'contact']) for (const b of DESIGNS[d][kind]) (used[`${b.type}:${b.variant}`] ||= new Set()).add(d);
   for (const id of ids) {
-    const prefix = { signature: 'sg-', horizon: 'hz-', vertex: 'vx-', lumen: 'lm-', nova: 'nv-', crest: 'cr-', harbor: 'hb-', operator: 'op-', atlas: 'at-', meridian: 'mr-' }[id];
+    const prefix = { signature: 'sg-', horizon: 'hz-', vertex: 'vx-', lumen: 'lm-', nova: 'nv-', crest: 'cr-', orbit: 'ob-', vista: 'vs-', facet: 'fc-', zephyr: 'zp-', harbor: 'hb-', operator: 'op-', atlas: 'at-', meridian: 'mr-' }[id];
     for (const kind of ['home', 'inner', 'contact']) for (const b of NEW_DESIGNS[id][kind]) {
       assert.ok(b.variant.startsWith(prefix), `${id}.${kind}: ${b.variant} is the design's own`);
       assert.deepEqual([...used[`${b.type}:${b.variant}`]], [id], `${b.type}:${b.variant} belongs to ${id} only`);
@@ -336,7 +337,7 @@ test('a banner video is checked by what it holds, not by its name', async () => 
 test('the motion toolkit script is valid and holds every control the designs rely on', async () => {
   const { KIT_SCRIPT } = await import('../src/kit/page.js');
   assert.doesNotThrow(() => new Function(KIT_SCRIPT), 'the script parses');
-  for (const hook of ['data-k-words', 'data-k-img', 'data-k-parallax', 'data-k-vline', 'data-k-top', 'data-k-progress', 'data-k-sticky', 'data-scroller', 'data-slider', 'data-count', 'data-k-pause', 'data-k-vpause']) assert.ok(KIT_SCRIPT.includes(hook), `${hook} is driven`);
+  for (const hook of ['data-k-words', 'data-k-img', 'data-k-parallax', 'data-k-vline', 'data-k-top', 'data-k-progress', 'data-scroller', 'data-slider', 'data-count', 'data-k-pause', 'data-k-vpause']) assert.ok(KIT_SCRIPT.includes(hook), `${hook} is driven`);
   assert.ok(KIT_SCRIPT.includes('prefers-reduced-motion'), 'the visitor who prefers less motion is respected');
   // the count-up reads a figure and its text around it (the regular expressions survive the template string)
   const re = new RegExp(KIT_SCRIPT.match(/m=\/(.*?)\/\.exec/)[1]);
@@ -347,7 +348,7 @@ test('the motion toolkit script is valid and holds every control the designs rel
 // ---------- Signature: the page's own order, the theme's colours, the details of Design settings ----------
 test('Signature is the design on offer; it keeps the sections of a page in the page\'s own order', () => {
   // (six designs are on offer: each with its own layouts and its own motion, all four on the same reading of a page)
-  assert.deepEqual(OFFERED_IDS, ['signature', 'horizon', 'vertex', 'lumen', 'nova', 'crest']);
+  assert.deepEqual(OFFERED_IDS, ['signature', 'horizon', 'vertex', 'lumen', 'nova', 'crest', 'orbit', 'vista', 'facet', 'zephyr']);
   for (const id of ['aurora', 'bento', 'atlas']) assert.ok(DESIGNS[id] && !OFFERED_IDS.includes(id), `${id} still draws a saved template, and is not offered`);
   const para = (n) => `<p>${'We have been serving the area with honest work. '.repeat(n)}</p>`;
   // a page whose order no blueprint would choose: questions first, a list, a text, the reviews-like text last
@@ -385,7 +386,7 @@ test('Design settings > Website details and motion: checked values, and what the
   const web = normalizeSpec({ extras: { web: { announce: { text: 'Same-day <b>service</b>', href: 'javascript:alert(1)' }, cta: { label: 'Book a visit', href: '/book.html' }, hours: 'Mon to Fri 8 to 5', tagline: 'Licensed since 1998', social: { facebook: 'https://facebook.com/acme', instagram: 'not a link' }, hero: { overlay: 'strong', height: 'nope' }, motion: { level: 'off' }, controls: { sticky: false }, pop: 'weird' } } }, DEFAULT_SPEC).extras.web;
   assert.deepEqual(web.announce, { on: true, text: 'Same-day bservice/b', href: '' });
   assert.deepEqual(web.social, { facebook: 'https://facebook.com/acme' });
-  assert.deepEqual([web.hero.overlay, web.hero.height, web.pop, web.motion.level, web.controls.sticky, web.controls.top], ['strong', 'tall', 'auto', 'off', false, true]);
+  assert.deepEqual([web.hero.overlay, web.hero.height, web.pop, web.motion.level, 'sticky' in web.controls, web.controls.top], ['strong', 'tall', 'auto', 'off', false, true]); // (the button that floated over the page is no longer an option)
   assert.equal(normalizeSpec({}, DEFAULT_SPEC).extras.web.motion.level, 'full', 'everything has a default');
   const html = '<html><body><header>h</header><main><h1>Title of the page</h1><p>Intro text of the page that is long enough to be a lead paragraph for the hero.</p><h2>About us</h2><p>' + 'We have been serving the area with honest work. '.repeat(6) + '</p></main><footer>f</footer></body></html>';
   const model = extractModel(html, 'about.html');
@@ -397,7 +398,7 @@ test('Design settings > Website details and motion: checked values, and what the
   assert.match(page.footer, /Mon to Fri 8 to 5/);
   assert.match(page.footer, /href="https:\/\/facebook\.com\/acme"/);
   assert.match(page.footer, /data-k-top/);
-  assert.doesNotMatch(page.footer, /data-k-sticky/, 'turned off');
+  assert.doesNotMatch(page.footer, /data-k-sticky/, 'no call-to-action button floats over the page');
   assert.equal(page.design.motion, 'full');
   assert.equal(tailor('signature', { spec: normalizeSpec({ extras: { web: { motion: { level: 'subtle' } } } }, DEFAULT_SPEC) }).motion, 'subtle');
 });
@@ -660,8 +661,64 @@ test('a design that carries a pattern takes the one that suits the business, or 
   const pc = placeholderContent(profile('Plumbing and drain cleaning'), { name: 'Acme' });
   const page = (id) => renderKitPage({ design: id, kind: 'home', content: pc.pages.home, site: pc.site, pack: pc.pack, active: null });
   assert.match(page('crest'), /<body[^>]* data-k-pat="waves"/, 'the page names its pattern');
-  assert.match(page('signature'), /<body[^>]* data-k-pat="none"/, 'a design without a pattern names none');
+  for (const id of ['orbit', 'vista', 'facet', 'zephyr']) {
+    const html = page(id);
+    assert.match(html, /<body[^>]* data-k-pat="waves"/, `${id} names its pattern`);
+    assert.match(html.split('<main')[1], /class="[^"]*\bk-pat(-layer)?\b/, `the hero of ${id} stands on a ground that carries the pattern`);
+    assert.match(html, /class="[^"]*\bk-glow\b/, `the cards of ${id} carry the gradient border and its light`);
+  }
+  assert.match(page('signature'), /<body[^>]* data-k-pat="waves"/, 'a design without a pattern of its own names it too: a section borrowed from a design that carries one can show it');
+  assert.ok(!/class="[^"]*\bk-pat(-layer)?\b/.test(page('signature').split('<main')[1].split('</main>')[0]), 'and draws none itself');
   assert.equal(DESIGNS.crest.pattern, undefined, 'nothing is written on the design that every website shares');
   const css = await kitCss();
   for (const name of PATTERNS) assert.ok(new RegExp('data-k-pat="?' + name + '"?\\]').test(css), 'the stylesheet draws ' + name);
+});
+
+test('a section, and the hero, can be drawn in the layout another design gives it', async () => {
+  const { fromDesign, designOfLayout, HOME_HEROES, INNER_HEROES } = await import('../src/kit/customize.js');
+  const para = (n) => `<p>${'We have been serving the area with honest work. '.repeat(n)}</p>`;
+  const html = `<html><body><header>h</header><main><h1>Roof repairs in Tampa</h1><p>Intro text of the page that is long enough to be a lead paragraph for the hero.</p><h2>Why choose us</h2>${para(6)}<h2>What we do</h2><ul><li>Roof repair and leak tracing</li><li>Roof replacement</li><li>Gutter cleaning</li><li>Storm damage</li></ul></main><footer>f</footer></body></html>`;
+  const model = extractModel(html, 'roofs.html');
+  const run = (kit, kind = 'inner') => { const c = collectSections(true); const out = fitPage({ model, site: SITE, spec: normalizeSpec({ kit }, DEFAULT_SPEC), u: (h) => h, kind }); collectSections(false); return { out, list: c[model.path] }; };
+
+  // every offered design gives the section a layout; this design's own comes first
+  const { list } = run({ design: 'orbit' });
+  const sec = list.find((x) => !x.hero && x.role === 'about');
+  assert.ok(sec, 'the page has a text section');
+  const same = sec.options.filter((o) => o.role === sec.role);
+  assert.deepEqual(same.map((o) => o.design).sort(), OFFERED_IDS.map((id) => DESIGNS[id].name).sort(), 'one layout of its kind from each offered design');
+  assert.equal(same[0].own, true, 'the layout of this design is the first');
+  assert.equal(same.filter((o) => o.own).length, 1);
+  assert.ok(same.filter((o) => !o.own).every((o) => /^<section data-k-from="[a-z]+"/.test(o.html.trim())), 'a layout of another design is marked with the design it comes from');
+  assert.ok(!/data-k-from=/.test(same[0].html), 'the design\'s own layout is not');
+
+  // the hero of the inner pages: one from each offered design, chosen once for every inner page
+  const hero = list.find((x) => x.hero);
+  assert.equal(hero.inner, true);
+  assert.deepEqual(hero.options.map((o) => o.variant).sort(), [...INNER_HEROES].sort());
+  assert.equal(hero.variant, 'ob-page');
+  const withHero = run({ design: 'orbit', innerHero: 'cr-page' });
+  assert.equal(withHero.list.find((x) => x.hero).variant, 'cr-page');
+  assert.match(withHero.out.main, /^\s*<section data-kit-key="hero" data-k-from="crest"/);
+  assert.equal(normalizeSpec({ kit: { design: 'orbit', innerHero: 'sg-hero' } }, DEFAULT_SPEC).kit.innerHero, undefined, 'only a hero of an inner page is kept');
+  assert.equal(run({ design: 'orbit' }, 'home').list.find((x) => x.hero).options.length, HOME_HEROES.length, 'the home page: the hero of every offered design');
+
+  // a layout chosen for the kind of section is drawn, with the shapes of the design it comes from
+  const chosen = run({ design: 'orbit', kinds: { [sec.kind]: { role: 'about', variant: 'sg-text' } } });
+  const drawn = chosen.out.main.split('\n').find((l) => l.includes(`data-kit-key="${sec.key}"`)) || chosen.out.main;
+  assert.match(chosen.out.main, new RegExp(`<section data-kit-key="${sec.key}" data-k-from="signature" style="[^"]*--k-r:`));
+  assert.equal(chosen.list.find((x) => x.key === sec.key).variant, 'sg-text');
+  assert.ok(drawn.length > 0);
+  assert.ok(chosen.out.main.includes('serving the area with honest work') && chosen.out.main.includes('Storm damage'), 'nothing of the page is lost');
+
+  // the skin goes with the layout: a section of a design drawn at night is a dark band on a day page, and the other way round
+  const orbit = tailor('orbit', { spec: normalizeSpec({ kit: { design: 'orbit' } }, DEFAULT_SPEC), seedKey: 'a' }), nova = tailor('nova', { spec: normalizeSpec({ kit: { design: 'nova' } }, DEFAULT_SPEC), seedKey: 'a' });
+  assert.match(fromDesign('<section class="relative py-4"><p>x</p></section>', 'nv-text', orbit), /^<section data-k-from="nova" style="[^"]+" class="k-night bg-paper relative py-4">/);
+  assert.match(fromDesign('<section class="relative py-4"><p>x</p></section>', 'sg-text', nova), /^<section data-k-from="signature" style="[^"]+" class="k-day bg-paper relative py-4">/);
+  assert.match(fromDesign('<section class="relative bg-primary-700 py-4" style="color:red"><p>x</p></section>', 'ob-stats', nova), /^<section data-k-from="orbit" class="k-day relative bg-primary-700 py-4" style="--k-r:[^"]+;color:red">/, 'a section with a ground of its own keeps it, and its own inline style');
+  assert.equal(fromDesign('<section class="a">x</section>', 'ob-text', orbit), '<section class="a">x</section>', 'the design\'s own layout is left as it is');
+  assert.equal(fromDesign('<section class="a [&>*]:b">x</section>', 'sg-text', orbit).includes('class="a [&>*]:b"'), true, 'a class that holds a > does not end the tag');
+  assert.equal(designOfLayout('hb-text'), null, 'a design that is not offered lends no layouts');
+  const css = await kitCss();
+  assert.ok(/\.k-night/.test(css), 'the stylesheet lets one section wear the night');
 });

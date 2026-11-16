@@ -101,6 +101,8 @@ const normalizeKit = (k, base) => ({
   pageOrder: pageOrder(k?.pageOrder ?? base?.pageOrder),
   kinds: kindChoices(k?.kinds ?? base?.kinds),
   chrome: chromeOf(k?.chrome ?? base?.chrome),
+  // the hero of the inner pages, when it is the one another design gives them
+  ...(/^[a-z]{2}-page$/.test(k?.innerHero ?? base?.innerHero ?? '') && KIT_VARIANTS.hero.includes(k?.innerHero ?? base?.innerHero) ? { innerHero: k?.innerHero ?? base?.innerHero } : {}),
   // the template's "Explore related pages" lists are left out of every page
   ...((k?.dropRelated ?? base?.dropRelated) === true ? { dropRelated: true } : {}),
 });
@@ -175,7 +177,7 @@ function normalizeWeb(input) {
     pattern: pick(w.pattern, WEB_OPTIONS.pattern, 'auto'),
     labels: bool(w.labels, true),
     motion: { level: pick(w.motion?.level, WEB_OPTIONS.level, 'full'), zoom: bool(w.motion?.zoom, true) },
-    controls: { progress: bool(w.controls?.progress, true), top: bool(w.controls?.top, true), sticky: bool(w.controls?.sticky, true) },
+    controls: { progress: bool(w.controls?.progress, true), top: bool(w.controls?.top, true) },
   };
 }
 function normalizeExtras(input, base) {

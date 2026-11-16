@@ -11,6 +11,7 @@ import { renderKitPage, designCss, designVars, context } from '../kit/page.js';
 import { kitCss } from '../kit/css.js';
 import { LIBRARY, HERO, VARIANTS } from '../kit/sections.js';
 import { applyTones } from '../kit/tones.js';
+import { fromDesign, designOfLayout, INNER_HEROES } from '../kit/customize.js';
 import { HEADER, FOOTER } from '../kit/chrome.js';
 import { styleGuide } from '../kit/styleguide.js';
 import { esc } from '../util/html.js';
@@ -77,13 +78,16 @@ export async function kitState(slug) {
 const ownLayout = (design, v) => (design.prefix ? String(v).startsWith(design.prefix) : !/^[a-z]{2}-/.test(String(v)));
 const ownVariants = (design) => ({ hero: Object.keys(HERO).filter((v) => ownLayout(design, v) && v !== design.innerHero), ...Object.fromEntries(Object.entries(LIBRARY).map(([k, v]) => [k, Object.keys(v).filter((x) => ownLayout(design, x))]).filter(([, v]) => v.length)) });
 
-export async function chooseDesign(slug, { design, pack, sections, pageSection, pageOrder, chrome, dropRelated } = {}) {
+export async function chooseDesign(slug, { design, pack, sections, pageSection, pageOrder, chrome, dropRelated, innerHero } = {}) {
   if (design && !DESIGNS[design]) throw new Error('Unknown design');
   const { spec } = await loadActive(slug);
-  const kit = { design: design === undefined ? spec.kit?.design || '' : design, pack: pack === undefined ? spec.kit?.pack || '' : PACK_IDS.includes(pack) ? pack : '', sections: { ...(spec.kit?.sections || {}) }, pageSections: { ...(spec.kit?.pageSections || {}) }, pageOrder: { ...(spec.kit?.pageOrder || {}) }, kinds: { ...(spec.kit?.kinds || {}) }, chrome: { ...(spec.kit?.chrome || {}) }, ...(spec.kit?.dropRelated ? { dropRelated: true } : {}) };
-  if (typeof dropRelated === 'boolean') { if (dropRelated) kit.dropRelated = true; else delete kit.dropRelated; }
+  const kit = { design: design === undefined ? spec.kit?.design || '' : design, pack: pack === undefined ? spec.kit?.pack || '' : PACK_IDS.includes(pack) ? pack : '', sections: { ...(spec.kit?.sections || {}) }, pageSections: { ...(spec.kit?.pageSections || {}) }, pageOrder: { ...(spec.kit?.pageOrder || {}) }, kinds: { ...(spec.kit?.kinds || {}) }, chrome: { ...(spec.kit?.chrome || {}) }, ...(spec.kit?.dropRelated ? { dropRelated: true } : {}), ...(spec.kit?.innerHero ? { innerHero: spec.kit.innerHero } : {}) };
+  // (a draft is merged with the version before it: what is taken back is saved as "none", a key only left out would come back)
+  if (typeof dropRelated === 'boolean') kit.dropRelated = dropRelated;
   // a new design starts from its own sections
-  if (design !== undefined && design !== spec.kit?.design) { kit.sections = { home: [], inner: [], contact: [] }; kit.pageSections = {}; kit.pageOrder = {}; kit.kinds = {}; kit.chrome = { header: {}, footer: {}, topbar: {} }; delete kit.dropRelated; }
+  if (design !== undefined && design !== spec.kit?.design) { kit.sections = { home: [], inner: [], contact: [] }; kit.pageSections = {}; kit.pageOrder = {}; kit.kinds = {}; kit.chrome = { header: {}, footer: {}, topbar: {} }; kit.dropRelated = false; kit.innerHero = ''; }
+  // the hero of the inner pages: the one another design gives them (empty: this design's own again). It is the same on every inner page
+  if (typeof innerHero === 'string') { if (INNER_HEROES.includes(innerHero) && HERO[innerHero] && !innerHero.startsWith(DESIGNS[kit.design]?.prefix || '?')) kit.innerHero = innerHero; else kit.innerHero = ''; }
   // the header, footer and top bar belong to the whole theme: what is sent for a zone replaces what was chosen for it
   if (chrome && typeof chrome === 'object') for (const zone of ['header', 'footer', 'topbar']) if (chrome[zone] && typeof chrome[zone] === 'object') kit.chrome[zone] = chrome[zone];
   // one section of one page: another layout, another kind of section, or back to the design's own
@@ -139,7 +143,7 @@ export async function chooseDesign(slug, { design, pack, sections, pageSection, 
     patch.tokens = { fontHeading: DESIGNS[design].fonts.heading, fontBody: DESIGNS[design].fonts.body, ...(design !== spec.kit?.design ? { headingWeight: weight, headingCase: vars['--k-h-case'] === 'uppercase' ? 'uppercase' : 'none', radius: DEFAULT_SPEC.tokens.radius } : {}) };
   }
   if (design !== undefined && design !== spec.kit?.design) Object.assign(patch, { tweaks: [], ops: [], htmlEdits: [] });
-  await saveDraft(slug, patch, { note: chrome ? 'Header, footer or top bar customised' : pageSection || pageOrder ? 'Section customised' : sections ? 'Design sections changed' : design ? `Design: ${DESIGNS[design].name}` : design === '' ? 'Classic template' : 'Business type' });
+  await saveDraft(slug, patch, { note: chrome ? 'Header, footer or top bar customised' : pageSection || pageOrder || typeof innerHero === 'string' ? 'Section customised' : sections ? 'Design sections changed' : design ? `Design: ${DESIGNS[design].name}` : design === '' ? 'Classic template' : 'Business type' });
   return kitState(slug);
 }
 
@@ -147,7 +151,7 @@ const page404 = (res) => res.status(404).send('Not found');
 
 export function kitRoutes(app, wrap) {
   app.get('/api/clients/:slug/kit', wrap(async (req, res) => res.json(await kitState(req.params.slug))));
-  app.put('/api/clients/:slug/kit', wrap(async (req, res) => res.json(await chooseDesign(req.params.slug, { design: req.body?.design, pack: req.body?.pack, sections: req.body?.sections, pageSection: req.body?.pageSection, pageOrder: req.body?.pageOrder, chrome: req.body?.chrome, dropRelated: req.body?.dropRelated }))));
+  app.put('/api/clients/:slug/kit', wrap(async (req, res) => res.json(await chooseDesign(req.params.slug, { design: req.body?.design, pack: req.body?.pack, sections: req.body?.sections, pageSection: req.body?.pageSection, pageOrder: req.body?.pageOrder, chrome: req.body?.chrome, dropRelated: req.body?.dropRelated, innerHero: req.body?.innerHero }))));
   // the section library for the Customize sections panel: every kind of section in every layout, drawn with placeholder content, to add one to a page
   app.get('/api/clients/:slug/template/library', wrap(async (req, res) => {
     const { pc, spec, seedKey } = await load(req.params.slug, '');
@@ -156,7 +160,13 @@ export function kitRoutes(app, wrap) {
     const types = [];
     for (const [type, variants] of Object.entries(LIBRARY)) {
       const layouts = [];
-      for (const [variant, fn] of Object.entries(variants)) { if (!ownLayout(design, variant)) continue; try { layouts.push({ variant, html: applyTones([fn(pc.data[type] || {}, K)], [{}])[0] }); } catch { /* a layout that cannot be drawn here is not offered */ } }
+      // (the layouts of this design first, then the layouts the other offered designs give the same kind of section)
+      for (const [variant, fn] of Object.entries(variants)) {
+        const own = ownLayout(design, variant), from = designOfLayout(variant);
+        if (!own && !(design.prefix && from)) continue;
+        try { layouts.push({ variant, own, design: from ? from.name : '', html: applyTones([fromDesign(fn(pc.data[type] || {}, K), variant, design)], [{}])[0] }); } catch { /* a layout that cannot be drawn here is not offered */ }
+      }
+      layouts.sort((a, b) => Number(b.own) - Number(a.own));
       if (layouts.length) types.push({ type, title: TITLES[type] || type, layouts });
     }
     res.json({ design: design.id, types });

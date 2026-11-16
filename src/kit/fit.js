@@ -9,7 +9,7 @@ import { packById, packFor } from './packs.js';
 import { tailor } from './tailor.js';
 import { applyTones } from './tones.js';
 import { restructure } from './restructure.js';
-import { keyOf, labelOf, convertTo, optionsFor, kindOf, NEEDS_PIC, pullPicture, ROLE_NAMES } from './customize.js';
+import { keyOf, labelOf, convertTo, optionsFor, kindOf, NEEDS_PIC, pullPicture, ROLE_NAMES, fromDesign, prefixOf, designOfLayout, HOME_HEROES, INNER_HEROES } from './customize.js';
 import { context } from './page.js';
 import { NEW_TYPED } from './designs/index.js';
 import { placeholderContent } from './content.js';
@@ -293,7 +293,7 @@ export function fitPage({ model, site, spec, u, img, kind, heroCandidate = null,
   const labels = new Set(K.nav.map((n) => String(n.label).toLowerCase()));
   K.navMore = more.filter((l) => !l.main && !inMenu.has(l.href) && !labels.has(String(l.text).toLowerCase())).map((l) => ({ label: l.text, href: l.href, children: [] }));
   // (a design that carries a pattern: the one of this website)
-  design.pattern = design.patterned ? patternFor(K.web.pattern, K.pack, site.name) : 'none';
+  design.pattern = design.patterned || design.prefix ? patternFor(K.web.pattern, K.pack, site.name) : 'none';
   if (K.web.cta?.label) K.site.ctaLabel = K.web.cta.label;
   if (K.web.cta?.href) K.site.ctaHref = K.web.cta.href;
   if (K.web.hours) K.site.hours = K.web.hours;
@@ -400,7 +400,11 @@ export function fitPage({ model, site, spec, u, img, kind, heroCandidate = null,
   if (kind === 'home' && video && !heroChoice.variant) heroVariant = design.videoHero && HERO[design.videoHero] ? design.videoHero : 'photo'; // a video needs a hero that draws behind its text
   K.dims = dims;
   const innerPic = heroBg ? { src: heroBg.src, alt: heroBg.alt } : banner ? { src: u(`/${banner.src}`), alt: banner.alt || '' } : null;
-  let heroHtml = kind === 'home' ? HERO[heroVariant](hero, K) : design.innerHero && HERO[design.innerHero] ? HERO[design.innerHero]({ ...hero, image: innerPic }, K) : heroBg || video ? pageHeroPhoto({ ...hero, image: heroBg ? { src: heroBg.src, alt: heroBg.alt } : hero.image }, K) : pageHero(hero, K);
+  // (the hero of the inner pages can be the one another design gives them: chosen once, for every inner page)
+  const innerHero = design.prefix && spec.kit?.innerHero && INNER_HEROES.includes(spec.kit.innerHero) && HERO[spec.kit.innerHero] ? spec.kit.innerHero : design.innerHero;
+  const heroShown = kind === 'home' ? heroVariant : innerHero || '';
+  let heroHtml = kind === 'home' ? HERO[heroVariant](hero, K) : innerHero && HERO[innerHero] ? HERO[innerHero]({ ...hero, image: innerPic }, K) : heroBg || video ? pageHeroPhoto({ ...hero, image: heroBg ? { src: heroBg.src, alt: heroBg.alt } : hero.image }, K) : pageHero(hero, K);
+  heroHtml = fromDesign(heroHtml, heroShown, design);
   if (collect) heroHtml = heroHtml.replace(/<section\b/, '<section data-kit-key="hero"');
   parts.push(heroHtml);
   const heroEntry = kind === 'home' ? design.home[0] || {} : {};
@@ -444,7 +448,7 @@ export function fitPage({ model, site, spec, u, img, kind, heroCandidate = null,
     const hostsForm = sideForm && !formPlaced && p === formHost && !ov?.html;
     if (hostsForm) formPlaced = true;
     const stand = Boolean(p.external && p.s.lead && sideForm && HOSTS.includes(p.s.type) && !ov?.html);
-    K.pos = { index: shown, first: shown === 0, picture: pictures, aside: hostsForm || stand, stand, kind };
+    K.pos = { index: shown, first: shown === 0, picture: pictures, aside: hostsForm || stand, stand, kind, hero: prefixOf(heroShown) };
     if (ordered && shown === 0 && !ov?.tone) entry = { ...entry, tone: design.firstTone || 'white' };
     shown += 1;
     if (p.s.img || (p.s.blocks || []).some((b) => b.t === 'img')) pictures += 1;
@@ -461,17 +465,25 @@ export function fitPage({ model, site, spec, u, img, kind, heroCandidate = null,
       // a section written by hand: what the design drew for it is not expected back
       try { removed.push(draw(p.s, p.variant, K)); } catch { /* nothing to keep */ }
       html = /^<section\b/i.test(ov.html) ? ov.html : `<section class="py-[var(--k-sec-y)]">${ov.html}</section>`;
-    } else try { html = draw(s, variant, K); } catch (e) { html = `<!-- kit: ${s.type} not drawn (${esc(e.message)}) -->`; }
+    } else try { html = fromDesign(draw(s, variant, K), variant, design); } catch (e) { html = `<!-- kit: ${s.type} not drawn (${esc(e.message)}) -->`; }
     if (!formDrawn && formAll && /\bid="quote"/.test(html)) formDrawn = true;
     if (collect) html = html.replace(/<section\b/, `<section data-kit-key="${p.key}"`);
     parts.push(html); entries.push(ov?.style ? { ...entry, style: withMotion(entry.style, ov.style) } : entry);
-    if (collect) info.push({ key: p.key, role, variant, label: labelOf(p.s), choice: Boolean(ov), edited: Boolean(ov?.html), style: ov?.style || {}, options: optionsFor(p, { K, design }, draw), ...kindInfo });
+    if (collect) info.push({ key: p.key, role, variant, from: designOfLayout(variant)?.name || '', label: labelOf(p.s), choice: Boolean(ov), edited: Boolean(ov?.html), style: ov?.style || {}, options: optionsFor(p, { K, design }, draw), ...kindInfo });
     K.pos = null;
   }
   K.formHtml = formAll;
   if (collect) {
-    const heroOptions = kind === 'home' ? Object.keys(HERO).filter((v) => (design.prefix ? v.startsWith(design.prefix) && v !== design.innerHero : !/^[a-z]{2}-/.test(v))).map((v) => ({ id: `hero:${v}`, role: 'hero', variant: v, group: 'same', label: v.replace(/-/g, ' '), note: '', html: applyTones([HERO[v](hero, K)], [{}])[0] })) : [];
-    collect[model.path] = [{ key: 'hero', role: 'hero', variant: heroVariant, label: 'Hero', hero: true, choice: Boolean(mine.hero), style: heroChoice.style || {}, options: heroOptions, ...(kind === 'home' ? {} : { bg: { type: heroBg ? 'photo' : 'plain', image: heroBg?.src || '', images: bannerPics.map((p) => ({ src: p.src, alt: p.alt, w: p.w, h: p.h, url: (K.img(p.src, '', true).match(/\bsrc="([^"]+)"/) || [])[1] || p.src })) } }) }, ...info];
+    // the hero: this design's own layout, and the hero the other offered designs give the same page
+    const heroDraw = (v) => (kind === 'home' ? HERO[v](hero, K) : HERO[v]({ ...hero, image: innerPic }, K));
+    const heroNames = design.prefix ? (kind === 'home' ? HOME_HEROES : INNER_HEROES).filter((v) => HERO[v]) : kind === 'home' ? Object.keys(HERO).filter((v) => !/^[a-z]{2}-/.test(v)) : [];
+    const heroOptions = [];
+    for (const v of heroNames) {
+      const from = designOfLayout(v), own = !design.prefix || v.startsWith(design.prefix);
+      try { heroOptions.push({ id: `hero:${v}`, role: 'hero', variant: v, group: 'same', own, design: from ? from.name : '', label: from ? from.name : v.replace(/-/g, ' '), note: '', html: applyTones([fromDesign(heroDraw(v), v, design)], [{}])[0] }); } catch { /* a hero that cannot show this page is not offered */ }
+    }
+    heroOptions.sort((x, y) => Number(y.own) - Number(x.own));
+    collect[model.path] = [{ key: 'hero', role: 'hero', variant: heroShown || heroVariant, from: designOfLayout(heroShown)?.name || '', label: 'Hero', hero: true, inner: kind !== 'home', choice: Boolean(mine.hero) || (kind !== 'home' && innerHero !== design.innerHero), style: heroChoice.style || {}, options: heroOptions, ...(kind === 'home' ? {} : { bg: { type: heroBg ? 'photo' : 'plain', image: heroBg?.src || '', images: bannerPics.map((p) => ({ src: p.src, alt: p.alt, w: p.w, h: p.h, url: (K.img(p.src, '', true).match(/\bsrc="([^"]+)"/) || [])[1] || p.src })) } }) }, ...info];
   }
   // a page with a form that no section placed: the form closes the page
   if (model.protected?.form && !parts.some((p) => /id="quote"/.test(p))) parts.push(sec(`<div class="mx-auto max-w-2xl">${quoteForm(K, 'Contact us')}</div>`, { tone: 'tint' }));

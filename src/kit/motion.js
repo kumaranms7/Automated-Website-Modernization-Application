@@ -89,6 +89,10 @@ export const DEFAULT_MOTION = {
   // (Signature moves through the motion toolkit: its buttons lift, the rest is set on its own markup)
   signature: { button: { hover: 'lift' }, buttonPrimary: { hover: 'lift' }, buttonAccent: { hover: 'lift' }, buttonGhost: { hover: 'lift' }, buttonLight: { hover: 'lift' }, buttonOutline: { hover: 'lift' } },
   crest: { button: { hover: 'lift' }, buttonPrimary: { hover: 'lift' }, buttonAccent: { hover: 'lift' }, buttonGhost: { hover: 'lift' }, buttonLight: { hover: 'lift' }, buttonOutline: { hover: 'lift' } },
+  zephyr: { button: { hover: 'lift' }, buttonPrimary: { hover: 'lift' }, buttonAccent: { hover: 'lift' }, buttonGhost: { hover: 'lift' }, buttonLight: { hover: 'lift' }, buttonOutline: { hover: 'lift' } },
+  facet: { button: { hover: 'lift' }, buttonPrimary: { hover: 'lift' }, buttonAccent: { hover: 'lift' }, buttonGhost: { hover: 'lift' }, buttonLight: { hover: 'lift' }, buttonOutline: { hover: 'lift' } },
+  vista: { button: { hover: 'lift' }, buttonPrimary: { hover: 'lift' }, buttonAccent: { hover: 'lift' }, buttonGhost: { hover: 'lift' }, buttonLight: { hover: 'lift' }, buttonOutline: { hover: 'lift' } },
+  orbit: { button: { hover: 'lift' }, buttonPrimary: { hover: 'lift' }, buttonAccent: { hover: 'lift' }, buttonGhost: { hover: 'lift' }, buttonLight: { hover: 'lift' }, buttonOutline: { hover: 'lift' } },
   nova: { button: { hover: 'lift' }, buttonPrimary: { hover: 'lift' }, buttonAccent: { hover: 'lift' }, buttonGhost: { hover: 'lift' }, buttonLight: { hover: 'lift' }, buttonOutline: { hover: 'lift' } },
   lumen: { button: { hover: 'lift' }, buttonPrimary: { hover: 'lift' }, buttonAccent: { hover: 'lift' }, buttonGhost: { hover: 'lift' }, buttonLight: { hover: 'lift' }, buttonOutline: { hover: 'lift' } },
   vertex: { button: { hover: 'lift' }, buttonPrimary: { hover: 'lift' }, buttonAccent: { hover: 'lift' }, buttonGhost: { hover: 'lift' }, buttonLight: { hover: 'lift' }, buttonOutline: { hover: 'lift' } },

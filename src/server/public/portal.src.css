@@ -410,6 +410,9 @@ body[data-tab="settings"]  { --a1: #64748b; --a2: #334155; }
   .cs-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; margin-top: .6rem; display: grid; gap: 10px; align-content: start; padding-right: 2px; }
   .cs-sel { display: grid; gap: 4px; padding: .7rem .85rem; border-radius: 14px; background: color-mix(in srgb, var(--a1) 9%, var(--surface)); border: 1px solid color-mix(in srgb, var(--a1) 30%, transparent); } .cs-sel small { color: var(--mute); } .cs-sel .btn { justify-self: start; margin-top: 4px; }
   .cs-bar { display: flex; flex-wrap: wrap; gap: 6px; }
+  .cs-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; border-radius: 12px; background: color-mix(in srgb, var(--a1) 8%, var(--surface)); border: 1px solid var(--line); position: sticky; top: 0; z-index: 3; }
+  .cs-tab { cursor: pointer; border: 0; border-radius: 9px; background: transparent; color: var(--mute); font: inherit; font-weight: 800; font-size: 13px; padding: .5rem .6rem; transition: background .15s, color .15s; } .cs-tab:hover { color: var(--ink); } .cs-tab.on { background: var(--a1); color: #fff; }
+  .cs-pane { display: grid; gap: 10px; align-content: start; }
   .cs-mini { cursor: pointer; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); font: inherit; font-weight: 700; font-size: 13px; padding: .4rem .7rem; } .cs-mini:hover:not(:disabled) { border-color: var(--a1); color: var(--a1); } .cs-mini:disabled { opacity: .35; cursor: default; }
   .cs-row { display: flex; align-items: center; gap: 6px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); } .cs-row.gone { opacity: .75; border-style: dashed; }
   .cs-grip { cursor: grab; color: var(--mute); letter-spacing: -2px; padding: 0 4px; user-select: none; } .cs-row:active .cs-grip { cursor: grabbing; }

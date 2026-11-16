@@ -151,8 +151,8 @@
 .k-js [data-k-img].k-r-in { clip-path: inset(0); }
 @keyframes k-kenburns { from { transform: scale(1); } to { transform: scale(1.13); } }
 .k-zoom { animation: k-kenburns 28s ease-out both; }
-[data-k-top], [data-k-sticky] { opacity: 0; transform: translateY(14px); pointer-events: none; transition: opacity .35s, transform .35s; }
-[data-k-top][data-show], [data-k-sticky][data-show] { opacity: 1; transform: none; pointer-events: auto; }
+[data-k-top] { opacity: 0; transform: translateY(14px); pointer-events: none; transition: opacity .35s, transform .35s; }
+[data-k-top][data-show] { opacity: 1; transform: none; pointer-events: auto; }
 [data-k-progress] { transform: scaleX(0); transform-origin: left; }
 [data-scroll-track] { scroll-snap-type: x mandatory; scrollbar-width: none; }
 [data-scroll-track]::-webkit-scrollbar { display: none; }
@@ -161,7 +161,7 @@
   .k-js [data-k-words] .k-wd > span { transform: none; transition: none; }
   .k-js [data-k-img] { clip-path: none; transition: none; }
   .k-zoom { animation: none; }
-  [data-k-top], [data-k-sticky] { transition: none; }
+  [data-k-top] { transition: none; }
 }
 
 /* the colour of calls to action: the livelier of the theme's secondary and accent colours (set per design by src/kit/tailor.js) */
@@ -209,7 +209,7 @@
 @property --k-angle { syntax: "<angle>"; initial-value: 0deg; inherits: false; }
 @keyframes k-angle { to { --k-angle: 360deg; } }
 .k-glow::after {
-  content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 2px; pointer-events: none; z-index: 2;
+  content: ""; position: absolute; inset: 0; border-radius: inherit; padding: var(--k-glow-w, 2px); pointer-events: none; z-index: 2;
   background:
     conic-gradient(from var(--k-angle), transparent 0 50%, var(--th-primary-500) 68%, var(--d-pop-300, var(--th-secondary-300)) 82%, var(--d-pop-500, var(--th-secondary-500)) 93%, transparent 100%),
     linear-gradient(135deg, color-mix(in srgb, var(--th-primary-400) 75%, transparent), transparent 34%, transparent 66%, color-mix(in srgb, var(--d-pop-400, var(--th-secondary-400)) 80%, transparent));
@@ -301,7 +301,7 @@
   --o-text: var(--th-text-primary); --o-text-2: var(--th-text-secondary); --o-text-3: var(--th-text-muted); --o-head: var(--th-text-heading); --o-link: var(--th-text-link);
   --o-line: var(--th-border-default); --o-line-2: var(--th-border-divider); --o-line-3: var(--th-border-strong); --o-line-in: var(--th-border-input);
 }
-.k-body[data-k-skin="night"] {
+.k-body[data-k-skin="night"], .k-night {
   --n-bg: color-mix(in srgb, var(--o-p-950) 70%, #000);
   --th-bg: var(--n-bg); --th-bg-alt: color-mix(in srgb, var(--o-p-950) 92%, #000); --th-bg-section: var(--n-bg); --th-bg-muted: color-mix(in srgb, var(--o-p-900) 45%, var(--n-bg)); --th-bg-light: var(--n-bg);
   --th-surface-card: color-mix(in srgb, var(--o-p-900) 50%, var(--n-bg)); --th-surface-card-hover: color-mix(in srgb, var(--o-p-900) 70%, var(--n-bg)); --th-surface-elevated: color-mix(in srgb, var(--o-p-900) 62%, var(--n-bg));
@@ -312,7 +312,9 @@
   --th-primary-400: var(--o-p-600); --th-primary-300: var(--o-p-700); --th-primary-200: color-mix(in srgb, var(--o-p-700) 60%, var(--n-bg)); --th-primary-100: color-mix(in srgb, var(--o-p-800) 62%, var(--n-bg)); --th-primary-50: color-mix(in srgb, var(--o-p-900) 55%, var(--n-bg));
   color-scheme: dark;
 }
-.k-body[data-k-skin="night"] .k-day {
+/* (a section in the layout of a design drawn at night, on a page drawn by day: it wears the night by itself) */
+.k-night { color: var(--th-text-primary); }
+.k-body[data-k-skin="night"] .k-day, .k-night .k-day {
   --th-bg: var(--o-bg); --th-bg-alt: var(--o-bg-alt); --th-surface-card: var(--o-card); --th-surface-form: var(--o-form); --th-surface-input: var(--o-input);
   --th-text-primary: var(--o-text); --th-text-secondary: var(--o-text-2); --th-text-muted: var(--o-text-3); --th-text-heading: var(--o-head); --th-text-link: var(--o-link); --th-text-link-hover: var(--o-link);
   --th-border-default: var(--o-line); --th-border-divider: var(--o-line-2); --th-border-strong: var(--o-line-3); --th-border-input: var(--o-line-in);
@@ -321,10 +323,10 @@
   color: var(--o-text); color-scheme: light;
 }
 /* (a fill of a shade that is bright at night carries dark words, not white ones; a link in running text is a pale shade) */
-.k-body[data-k-skin="night"] .text-white:is(.bg-primary-600, .bg-primary-700, .bg-primary-800, .bg-primary-900) { color: var(--o-p-950); }
-.k-body[data-k-skin="night"] .prose-k a:not(.k-day a) { color: var(--o-p-300); text-decoration-color: color-mix(in srgb, var(--o-p-300) 45%, transparent); }
-.k-body[data-k-skin="night"] .prose-k li::marker { color: var(--o-p-400); }
-.k-body[data-k-skin="night"] .text-popbtn { color: var(--color-pop-400); }
+:is(.k-body[data-k-skin="night"], .k-night) .text-white:is(.bg-primary-600, .bg-primary-700, .bg-primary-800, .bg-primary-900):not(.k-day, .k-day *) { color: var(--o-p-950); }
+:is(.k-body[data-k-skin="night"], .k-night) .prose-k a:not(.k-day a) { color: var(--o-p-300); text-decoration-color: color-mix(in srgb, var(--o-p-300) 45%, transparent); }
+:is(.k-body[data-k-skin="night"], .k-night) .prose-k li:not(.k-day li)::marker { color: var(--o-p-400); }
+:is(.k-body[data-k-skin="night"], .k-night) .text-popbtn:not(.k-day, .k-day *) { color: var(--color-pop-400); }
 
 /* the words of a heading that shine: the theme's two colours run through them */
 .k-shine { background-image: linear-gradient(100deg, var(--o-p-300), var(--color-pop-300) 55%, var(--o-p-200)); background-size: 220% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent; animation: k-shine 9s ease-in-out infinite alternate; }
@@ -397,3 +399,77 @@ body:not([data-k-pat]) .k-pat::before, body:not([data-k-pat]) .k-pat-layer, [dat
 [data-k-pat="plus"] { --k-pat-img: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='36' height='36'%3E%3Cpath d='M18 13v10M13 18h10M0-5V5M-5 0H5M36-5V5M31 0h10M0 31v10M-5 36H5M36 31v10M31 36h10' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E"); --k-pat-size: 36px 36px; }
 [data-k-pat="rings"] { --k-pat-img: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Cg fill='none' stroke='%23000' stroke-width='1.3'%3E%3Ccircle cx='0' cy='0' r='12'/%3E%3Ccircle cx='0' cy='0' r='24'/%3E%3Ccircle cx='60' cy='0' r='12'/%3E%3Ccircle cx='60' cy='0' r='24'/%3E%3Ccircle cx='0' cy='60' r='12'/%3E%3Ccircle cx='0' cy='60' r='24'/%3E%3Ccircle cx='60' cy='60' r='12'/%3E%3Ccircle cx='60' cy='60' r='24'/%3E%3C/g%3E%3C/svg%3E"); --k-pat-size: 60px 60px; }
 [data-k-pat="hex"] { --k-pat-img: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='97'%3E%3Cpath d='M28 0L56 16.2V48.5L28 64.7 0 48.5V16.2zM28 64.7V97' fill='none' stroke='%23000' stroke-width='1.2'/%3E%3C/svg%3E"); --k-pat-size: 56px 97px; }
+
+/* ---------- four more ways of coming into view ----------
+   orbit (Orbit): parts swing in along an arc, as if turning round a far centre, and pictures open like an iris.
+   settle (Vista): parts are a little too large and too far, and settle into place; a picture draws nearer inside its frame.
+   shear (Facet): parts come in leaning and straighten; pictures are wiped clear on a diagonal.
+   float (Zephyr): parts float up softly and take their size; pictures swell into theirs. */
+.k-js [data-k-anim="orbit"] [data-k-reveal] { opacity: 0; transform: rotate(-5deg) translateY(34px); transform-origin: -30% 160%; filter: none; transition: opacity .6s ease, transform .9s cubic-bezier(.2, .8, .2, 1); }
+.k-js [data-k-anim="orbit"] [data-k-reveal="left"] { transform: rotate(-7deg) translateX(-34px); }
+.k-js [data-k-anim="orbit"] [data-k-reveal="right"] { transform: rotate(7deg) translateX(34px); }
+.k-js [data-k-anim="orbit"] [data-k-reveal="zoom"] { transform: scale(.84) rotate(-7deg); }
+.k-js [data-k-anim="orbit"] [data-k-reveal].k-r-in { opacity: 1; transform: none; }
+.k-js [data-k-anim="orbit"] [data-k-reveal]:has([data-k-img]) { opacity: 1; transform: none; }
+.k-js [data-k-anim="orbit"] [data-k-img] { clip-path: circle(0% at 50% 50%); opacity: 1; transition: clip-path 1s cubic-bezier(.3, .7, .2, 1); }
+.k-js [data-k-anim="orbit"] [data-k-img].k-r-in { clip-path: circle(75% at 50% 50%); }
+.k-js [data-k-anim="orbit"] [data-k-img] img { transform: scale(1.18) rotate(4deg); transition: transform 1.4s cubic-bezier(.2, .8, .2, 1); }
+.k-js [data-k-anim="orbit"] [data-k-img].k-r-in img { transform: none; }
+.k-js [data-k-anim="orbit"] [data-k-words] .k-wd > span { transform: translateY(105%) rotate(8deg); transform-origin: left bottom; transition: transform .8s cubic-bezier(.2, .8, .2, 1); transition-delay: calc(var(--i, 0) * 55ms); }
+.k-js [data-k-anim="orbit"] [data-k-words].k-r-in .k-wd > span { transform: none; }
+@media (max-width: 640px) { .k-js [data-k-anim="orbit"] [data-k-reveal], .k-js [data-k-anim="orbit"] [data-k-reveal="left"], .k-js [data-k-anim="orbit"] [data-k-reveal="right"] { transform: translateY(28px) rotate(-3deg); } }
+.k-js [data-k-anim="settle"] [data-k-reveal] { opacity: 0; transform: scale(1.06) translateY(24px); transform-origin: 50% 100%; filter: none; transition: opacity .7s ease, transform 1s cubic-bezier(.16, .84, .3, 1); }
+.k-js [data-k-anim="settle"] [data-k-reveal="left"] { transform: translateX(-64px); }
+.k-js [data-k-anim="settle"] [data-k-reveal="right"] { transform: translateX(64px); }
+.k-js [data-k-anim="settle"] [data-k-reveal="zoom"] { transform: scale(1.12); }
+.k-js [data-k-anim="settle"] [data-k-reveal].k-r-in { opacity: 1; transform: none; }
+.k-js [data-k-anim="settle"] [data-k-reveal]:has([data-k-img]) { opacity: 1; transform: none; }
+.k-js [data-k-anim="settle"] [data-k-img] { clip-path: none; opacity: 0; transition: opacity .9s ease; }
+.k-js [data-k-anim="settle"] [data-k-img].k-r-in { opacity: 1; }
+.k-js [data-k-anim="settle"] [data-k-img] img { transform: scale(1.24); transition: transform 1.7s cubic-bezier(.16, .84, .3, 1); }
+.k-js [data-k-anim="settle"] [data-k-img].k-r-in img { transform: none; }
+.k-js [data-k-anim="settle"] [data-k-words] .k-wd { overflow: visible; }
+.k-js [data-k-anim="settle"] [data-k-words] .k-wd > span { transform: translateX(.55em); opacity: 0; transition: transform .8s cubic-bezier(.16, .84, .3, 1), opacity .6s ease; transition-delay: calc(var(--i, 0) * 65ms); }
+.k-js [data-k-anim="settle"] [data-k-words].k-r-in .k-wd > span { transform: none; opacity: 1; }
+@media (max-width: 640px) { .k-js [data-k-anim="settle"] [data-k-reveal], .k-js [data-k-anim="settle"] [data-k-reveal="left"], .k-js [data-k-anim="settle"] [data-k-reveal="right"] { transform: scale(1.04) translateY(22px); } }
+.k-js [data-k-anim="shear"] [data-k-reveal] { opacity: 0; transform: skewX(-9deg) translateX(-42px); transform-origin: 0 100%; filter: none; transition: opacity .5s ease, transform .8s cubic-bezier(.2, .9, .25, 1); }
+.k-js [data-k-anim="shear"] [data-k-reveal="left"] { transform: skewX(-12deg) translateX(-70px); }
+.k-js [data-k-anim="shear"] [data-k-reveal="right"] { transform: skewX(12deg) translateX(70px); }
+.k-js [data-k-anim="shear"] [data-k-reveal="zoom"] { transform: skewY(-5deg) translateY(36px) scale(.94); }
+.k-js [data-k-anim="shear"] [data-k-reveal].k-r-in { opacity: 1; transform: none; }
+.k-js [data-k-anim="shear"] [data-k-reveal]:has([data-k-img]) { opacity: 1; transform: none; }
+.k-js [data-k-anim="shear"] [data-k-img] { clip-path: polygon(0 0, 0 0, -30% 100%, 0 100%); opacity: 1; transition: clip-path .95s cubic-bezier(.3, .7, .2, 1); }
+.k-js [data-k-anim="shear"] [data-k-img].k-r-in { clip-path: polygon(0 0, 130% 0, 100% 100%, 0 100%); }
+.k-js [data-k-anim="shear"] [data-k-img] img { transform: scale(1.16) translateX(4%); transition: transform 1.3s cubic-bezier(.2, .8, .2, 1); }
+.k-js [data-k-anim="shear"] [data-k-img].k-r-in img { transform: none; }
+.k-js [data-k-anim="shear"] [data-k-words] .k-wd > span { transform: translateY(110%) skewY(7deg); transform-origin: left bottom; transition: transform .75s cubic-bezier(.2, .9, .25, 1); transition-delay: calc(var(--i, 0) * 50ms); }
+.k-js [data-k-anim="shear"] [data-k-words].k-r-in .k-wd > span { transform: none; }
+@media (max-width: 640px) { .k-js [data-k-anim="shear"] [data-k-reveal], .k-js [data-k-anim="shear"] [data-k-reveal="left"], .k-js [data-k-anim="shear"] [data-k-reveal="right"] { transform: skewX(-5deg) translateX(-24px); } }
+.k-js [data-k-anim="float"] [data-k-reveal] { opacity: 0; transform: translateY(46px) scale(.96); filter: none; transition: opacity .9s ease, transform 1.1s cubic-bezier(.22, 1, .36, 1); }
+.k-js [data-k-anim="float"] [data-k-reveal="left"] { transform: translate(-46px, 20px) scale(.97); }
+.k-js [data-k-anim="float"] [data-k-reveal="right"] { transform: translate(46px, 20px) scale(.97); }
+.k-js [data-k-anim="float"] [data-k-reveal="zoom"] { transform: translateY(22px) scale(.86); }
+.k-js [data-k-anim="float"] [data-k-reveal].k-r-in { opacity: 1; transform: none; }
+.k-js [data-k-anim="float"] [data-k-reveal]:has([data-k-img]) { opacity: 1; transform: none; }
+.k-js [data-k-anim="float"] [data-k-img] { clip-path: none; opacity: 0; transform: translateY(26px) scale(.9); transition: opacity .8s ease, transform 1.1s cubic-bezier(.22, 1, .36, 1); }
+.k-js [data-k-anim="float"] [data-k-img].k-r-in { opacity: 1; transform: none; }
+.k-js [data-k-anim="float"] [data-k-img] img { transform: scale(1.12); transition: transform 1.6s cubic-bezier(.22, 1, .36, 1); }
+.k-js [data-k-anim="float"] [data-k-img].k-r-in img { transform: none; }
+.k-js [data-k-anim="float"] [data-k-words] .k-wd { overflow: visible; }
+.k-js [data-k-anim="float"] [data-k-words] .k-wd > span { transform: translateY(.6em); opacity: 0; transition: transform 1s cubic-bezier(.22, 1, .36, 1), opacity .8s ease; transition-delay: calc(var(--i, 0) * 70ms); }
+.k-js [data-k-anim="float"] [data-k-words].k-r-in .k-wd > span { transform: none; opacity: 1; }
+@media (max-width: 640px) { .k-js [data-k-anim="float"] [data-k-reveal], .k-js [data-k-anim="float"] [data-k-reveal="left"], .k-js [data-k-anim="float"] [data-k-reveal="right"] { transform: translateY(32px) scale(.97); } }
+
+/* ---------- shapes and marks of those designs ---------- */
+/* a ring that turns slowly (the orbits round a picture) */
+@keyframes k-turn { to { transform: rotate(1turn); } }
+.k-turn { animation: k-turn var(--k-turn-s, 40s) linear infinite; }
+.k-turn-back { animation-direction: reverse; }
+/* a shape whose outline flows (the light on its border follows it) */
+@keyframes k-blob { 0% { border-radius: 58% 42% 38% 62% / 55% 45% 55% 45%; } 50% { border-radius: 42% 58% 60% 40% / 48% 60% 40% 52%; } 100% { border-radius: 52% 48% 44% 56% / 60% 42% 58% 40%; } }
+.k-blob { border-radius: 58% 42% 38% 62% / 55% 45% 55% 45%; animation: k-blob 16s ease-in-out infinite alternate; }
+@media (prefers-reduced-motion: reduce) { .k-turn, .k-blob { animation: none; } }
+[data-k-motion="subtle"] .k-turn, [data-k-motion="subtle"] .k-blob { animation: none; }
+/* the accent words of a heading: under a marker's stroke, or over a scalloped line */
+.k-marker { background-image: linear-gradient(transparent 60%, color-mix(in srgb, var(--d-pop-300, var(--th-secondary-300)) 62%, transparent) 60% 93%, transparent 93%); -webkit-box-decoration-break: clone; box-decoration-break: clone; padding-inline: .06em; }
+.k-scallop { background-image: radial-gradient(.2em .2em at 50% 100%, transparent 56%, var(--d-pop-400, var(--th-secondary-400)) 60% 86%, transparent 90%); background-size: .44em .2em; background-repeat: repeat-x; background-position: 0 100%; padding-bottom: .16em; -webkit-box-decoration-break: clone; box-decoration-break: clone; }

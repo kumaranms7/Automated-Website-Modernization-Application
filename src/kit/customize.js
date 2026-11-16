@@ -1,5 +1,6 @@
 import { LIBRARY } from './sections.js';
 import { applyTones } from './tones.js';
+import { NEW_DESIGNS } from './designs/index.js';
 
 // Customising one section of a real page: what it can be drawn as. The same kind of section has several layouts; a list can also be
 // drawn as another kind of list. Nothing is changed unless all of the section's content survives in the new form.
@@ -94,6 +95,32 @@ export function convertTo(s, role) {
   return { type, title: s.title || '', intro, items: list.map((i) => ({ title: i.title, text: i.text, href: i.href, img: i.img, imgAlt: i.imgAlt })) };
 }
 
+// The designs that are offered, by the prefix of their layout names. A section of a page drawn in one of them can be drawn in the layout any
+// other of them gives the same content.
+const OFFERED = Object.values(NEW_DESIGNS).filter((d) => d.offered && d.prefix);
+const BY_PREFIX = Object.fromEntries(OFFERED.map((d) => [d.prefix, d]));
+export const prefixOf = (variant) => { const v = String(variant || ''); return v.slice(0, v.indexOf('-') + 1); };
+export const designOfLayout = (variant) => BY_PREFIX[prefixOf(variant)] || null;
+// the hero layouts of the offered designs: of the home page, and of an inner page
+export const HOME_HEROES = OFFERED.map((d) => d.videoHero);
+export const INNER_HEROES = OFFERED.map((d) => d.innerHero);
+
+// A section drawn in the layout of another design keeps the shapes of that design (its corners, the weight and the case of its headings)
+// and its skin: a section of a design drawn at night is a dark band on a page drawn by day, and a section of a day design is a sheet of
+// paper on a page drawn at night. The fonts and the colours stay those of the page.
+export function fromDesign(html, variant, design) {
+  const src = designOfLayout(variant);
+  if (!src || !design?.prefix || src.prefix === design.prefix) return html;
+  const vars = Object.entries(src.vars || {}).map(([k, v]) => `${k}:${v}`).join(';');
+  const skin = (src.skin || 'day') === (design.skin || 'day') ? '' : src.skin === 'night' ? 'k-night' : 'k-day';
+  return String(html).replace(/<section\b((?:[^>"]|"[^"]*")*)>/, (m, attrs) => {
+    let a = attrs;
+    if (vars) a = /\sstyle="/.test(a) ? a.replace(/\sstyle="/, () => ` style="${vars};`) : ` style="${vars}"${a}`;
+    if (skin) a = /\sclass="/.test(a) ? a.replace(/\sclass="([^"]*)"/, (x, cls) => ` class="${skin}${/(^|\s)bg-/.test(cls) ? '' : ' bg-paper'} ${cls}"`) : `${a} class="${skin} bg-paper"`;
+    return `<section data-k-from="${src.id}"${a}>`;
+  });
+}
+
 // every layout the section can be drawn in: of its own kind, then of the kinds it can become
 export function optionsFor(p, { K, design }, draw) {
   const out = [];
@@ -101,14 +128,17 @@ export function optionsFor(p, { K, design }, draw) {
   for (const k of ['home', 'inner', 'contact']) for (const b of design[k] || []) (used[`${b.type}:${b.variant}`] ||= []).push(k);
   const add = (role, s, group) => {
     for (const variant of Object.keys(LIBRARY[role] || {})) {
-      if (design.prefix ? !variant.startsWith(design.prefix) : /^[a-z]{2}-/.test(variant) && !(used[`${role}:${variant}`] || []).length) continue; // a design offers its own layouts only
+      // a design with layouts of its own offers them, and the layouts of the other offered designs; a design without offers the shared ones
+      const from = designOfLayout(variant);
+      const own = !design.prefix || variant.startsWith(design.prefix);
+      if (design.prefix ? !own && !from : /^[a-z]{2}-/.test(variant) && !(used[`${role}:${variant}`] || []).length) continue;
       if (variant === 'wide' && !s.wide) continue;
       // a picture layout needs a picture: one in the text is taken out of it
       const shown = NEEDS_PIC.test(variant) && !s.img ? pullPicture(s) : s;
       if (NEEDS_PIC.test(variant) && !shown?.img) continue;
       try {
-        const html = applyTones([draw(shown, variant, K)], [p.entry || {}])[0];
-        out.push({ id: `${role}:${variant}`, role, variant, group, label: variant.replace(/-/g, ' '), note: (used[`${role}:${variant}`] || []).join(', '), html });
+        const html = applyTones([fromDesign(draw(shown, variant, K), variant, design)], [p.entry || {}])[0];
+        out.push({ id: `${role}:${variant}`, role, variant, group, own, design: from ? from.name : '', label: from ? from.name : variant.replace(/-/g, ' '), note: (used[`${role}:${variant}`] || []).join(', '), html });
       } catch { /* a layout that cannot show this content is not offered */ }
     }
   };
@@ -118,5 +148,6 @@ export function optionsFor(p, { K, design }, draw) {
     const to = convertTo(p.s, role);
     if (to) add(role, to, 'convert');
   }
-  return out;
+  // (this design's own layouts first)
+  return [...out.filter((o) => o.own), ...out.filter((o) => !o.own)];
 }
